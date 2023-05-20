@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QSlider>
 #include <thread>
+#include <QScrollArea>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,9 +25,11 @@ MainWindow::~MainWindow()
 void MainWindow::on_loadButton_clicked() {
     QString select = QFileDialog::getOpenFileName(this, "Select a Bitmap image:", "", "Bitmap (*.bmp) ;; All Files (*.*)");
     if (!select.isEmpty()) {
-        QLabel *imageLabel = findChild<QLabel*>("labelOriginal");
+        QLabel *label = new QLabel();
+        QScrollArea *scroll = findChild<QScrollArea*>("scrollOriginal");
         QPixmap bitmap(select);
-        imageLabel->setPixmap(bitmap);
+        label->setPixmap(bitmap);
+        scroll->setWidget(label);
     }
 }
 
@@ -53,5 +56,12 @@ void MainWindow::on_sliderQuality_valueChanged(int value) {
         stopCompression();
         startCompression();
     }
+}
+
+void MainWindow::zoomInOriginal() {
+    QScrollArea *scrollArea = findChild<QScrollArea*>("scrollOriginal");
+    QPixmap old_img = ((QLabel*)scrollArea->widget())->pixmap();
+    QPixmap new_img = old_img.scaled(1.5 * old_img.width(), 1.5 * old_img.height(), Qt::KeepAspectRatio);
+    ((QLabel*)scrollArea->widget())->setPixmap(new_img);
 }
 

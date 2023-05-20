@@ -29,6 +29,7 @@ private:
 
     void stopCompression();
     void startCompression();
+    void zoomInOriginal();
 
 
 };
