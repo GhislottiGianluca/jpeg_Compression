@@ -6,12 +6,16 @@
 #include <QSlider>
 #include <thread>
 #include <QScrollArea>
+#include <QImageWriter>
+#include <QPushButton>
+#include <QBuffer>
+#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow),
-    alreadyRunningCompression(false),
-    compressionThread(nullptr)
+    qualityFactor(90),
+    buffer(new QBuffer())
 {
     ui->setupUi(this);
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
@@ -29,39 +33,54 @@ void MainWindow::on_loadButton_clicked() {
         QScrollArea *scroll = findChild<QScrollArea*>("scrollOriginal");
         QPixmap bitmap(select);
         label->setPixmap(bitmap);
+        delete scroll->widget();
         scroll->setWidget(label);
+        startCompression(qualityFactor);
+        findChild<QPushButton*>("buttonSave")->setEnabled(true);
     }
 }
 
-void MainWindow::startCompression(){
-    alreadyRunningCompression = true;
-    compressionThread = new std::thread([&]{
-        // Do something............
+void MainWindow::startCompression(int quality){
 
-        alreadyRunningCompression = false;
-    });
+    QImageWriter writer;
+    delete buffer;
+    buffer = new QBuffer();
+    writer.setDevice(buffer);
+    writer.setFormat("jpeg");
+    writer.setQuality(quality);
+
+
+    writer.write(((QLabel*)findChild<QScrollArea*>("scrollOriginal")->widget())->pixmap().toImage());
+
+    QLabel *label = new QLabel();
+    QScrollArea *scroll = findChild<QScrollArea*>("scrollCompressed");
+    QPixmap compressed;
+    compressed.loadFromData(buffer->buffer(), "JPG");
+
+    label->setPixmap(compressed);
+    scroll->setWidget(label);
+
 }
 
-void MainWindow::stopCompression() {
-    if (compressionThread != nullptr) {
-        compressionThread->join();
-        delete compressionThread;
-        compressionThread = nullptr;
+void MainWindow::saveImage() {
+    QString saveFileName = QFileDialog::getSaveFileName(this, "Save compressed image", "compressed_image", "Jpeg (*.jpg);; All Files (*)");
+    if (!saveFileName.isEmpty()){
+        QFile image(saveFileName);
+        image.open(QIODevice::WriteOnly);
+        image.write(buffer->buffer());
+        image.close();
     }
 }
 
 void MainWindow::on_sliderQuality_valueChanged(int value) {
     findChild<QLabel*>("labelQualityValue")->setText(QString::number(value));
-    if (!alreadyRunningCompression) {
-        stopCompression();
-        startCompression();
+    qualityFactor = value;
+    if (findChild<QPushButton*>("buttonSave")->isEnabled()) {
+        startCompression(value);
     }
 }
 
-void MainWindow::zoomInOriginal() {
-    QScrollArea *scrollArea = findChild<QScrollArea*>("scrollOriginal");
-    QPixmap old_img = ((QLabel*)scrollArea->widget())->pixmap();
-    QPixmap new_img = old_img.scaled(1.5 * old_img.width(), 1.5 * old_img.height(), Qt::KeepAspectRatio);
-    ((QLabel*)scrollArea->widget())->setPixmap(new_img);
+void MainWindow::on_buttonSave_clicked() {
+    saveImage();
 }
 

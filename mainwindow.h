@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <thread>
+#include <QBuffer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,15 +23,15 @@ private slots:
 
     void on_sliderQuality_valueChanged(int value);
 
+    void on_buttonSave_clicked();
+
 private:
     Ui::MainWindow *ui;
-    std::thread *compressionThread;
-    bool alreadyRunningCompression;
+    int qualityFactor;
+    QBuffer *buffer;
 
-    void stopCompression();
-    void startCompression();
-    void zoomInOriginal();
-
+    void saveImage();
+    void startCompression(int quality);
 
 };
 #endif // MAINWINDOW_H
