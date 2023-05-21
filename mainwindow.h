@@ -25,13 +25,18 @@ private slots:
 
     void on_buttonSave_clicked();
 
+    void onCompressionFinished();
+
+signals:
+    void finishCompression();
+
 private:
     Ui::MainWindow *ui;
     int qualityFactor;
     QBuffer *buffer;
 
     void saveImage();
-    void startCompression(int quality);
+    void startCompression();
 
 };
 #endif // MAINWINDOW_H

@@ -19,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
+
+    connect(this, SIGNAL(finishCompression()), this, SLOT(onCompressionFinished()));
 }
 
 MainWindow::~MainWindow()
@@ -29,37 +31,50 @@ MainWindow::~MainWindow()
 void MainWindow::on_loadButton_clicked() {
     QString select = QFileDialog::getOpenFileName(this, "Select a Bitmap image:", "", "Bitmap (*.bmp) ;; All Files (*.*)");
     if (!select.isEmpty()) {
+        QFile file(select);
+        file.open(QIODevice::ReadOnly);
+        double size = file.size();
+        file.close();
         QLabel *label = new QLabel();
         QScrollArea *scroll = findChild<QScrollArea*>("scrollOriginal");
         QPixmap bitmap(select);
         label->setPixmap(bitmap);
+        label->setAlignment(Qt::AlignCenter);
         delete scroll->widget();
         scroll->setWidget(label);
-        startCompression(qualityFactor);
+        findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
+        findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed</h3>");
+        startCompression();
         findChild<QPushButton*>("buttonSave")->setEnabled(true);
     }
 }
 
-void MainWindow::startCompression(int quality){
-
-    QImageWriter writer;
-    delete buffer;
-    buffer = new QBuffer();
-    writer.setDevice(buffer);
-    writer.setFormat("jpeg");
-    writer.setQuality(quality);
-
-
-    writer.write(((QLabel*)findChild<QScrollArea*>("scrollOriginal")->widget())->pixmap().toImage());
-
+void MainWindow::onCompressionFinished() {
     QLabel *label = new QLabel();
+    label->setAlignment(Qt::AlignCenter);
     QScrollArea *scroll = findChild<QScrollArea*>("scrollCompressed");
     QPixmap compressed;
     compressed.loadFromData(buffer->buffer(), "JPG");
 
     label->setPixmap(compressed);
+    delete scroll->widget();
     scroll->setWidget(label);
+    findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed (" + QString::number((double)buffer->buffer().size() / 1000.0) +  " KB)</h3>");
+}
 
+
+void MainWindow::startCompression(){
+    QImageWriter writer;
+    delete buffer;
+    buffer = new QBuffer();
+    writer.setDevice(buffer);
+    writer.setFormat("jpeg");
+    writer.setQuality(qualityFactor);
+    writer.setOptimizedWrite(true);
+    writer.setProgressiveScanWrite(true);
+
+    writer.write(((QLabel*)findChild<QScrollArea*>("scrollOriginal")->widget())->pixmap().toImage());
+    emit finishCompression();
 }
 
 void MainWindow::saveImage() {
@@ -76,7 +91,7 @@ void MainWindow::on_sliderQuality_valueChanged(int value) {
     findChild<QLabel*>("labelQualityValue")->setText(QString::number(value));
     qualityFactor = value;
     if (findChild<QPushButton*>("buttonSave")->isEnabled()) {
-        startCompression(value);
+        startCompression();
     }
 }
 
