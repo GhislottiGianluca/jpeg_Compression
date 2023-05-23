@@ -12,21 +12,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
-
-include(ExternalProject)
-
-set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
-
-ExternalProject_Add(libjpegturbo
-    GIT_REPOSITORY https://github.com/libjpeg-turbo/libjpeg-turbo
-    GIT_TAG 2.1.5.1
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION}
-)
-
-include_directories(${EXTERNAL_INSTALL_LOCATION}/include)
-link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
-
-
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
@@ -45,13 +30,13 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 # For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
     if(ANDROID)
-        add_library(jpeg_compression SHARED libjpeg.a
+        add_library(jpeg_compression SHARED
             ${PROJECT_SOURCES}
         )
 # Define properties for Android with Qt 5 after find_package() calls as:
 #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
-        add_executable(jpeg_compression DisplayImage.cp libjpeg.a
+        add_executable(jpeg_compression
             ${PROJECT_SOURCES}
         )
     endif()
