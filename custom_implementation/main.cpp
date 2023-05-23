@@ -2,40 +2,45 @@
 #include <fftw3.h>
 #include "timer.h"
 
-inline double dot(int N, double *a, double *b, int jump = 1) {
-    double sum = 0;
+void dct(int N, double *in, double *out, int jump = 1) {
+
+    double *f = new double[N];
+
     for (int i = 0; i < N; ++i) {
-        sum += a[i * jump] * b[i];
+        f[i] = in[i * jump];
     }
 
-    return sum;
-}
-
-void dct(int N, double *in, double *out, int jump = 1) {
-    double *temp = new double[N];
     for (int i = 0; i < N; ++i) {
+        double delta = i != 0 ? 1 : ((double)1 / sqrt(2.0));
+        
+        double a_i = 0;
+        
         for (int j = 0; j < N; ++j) {
-            temp[j] = cos(i * M_PI * (2 * i + 1) / (2 * N));
+            a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N)) * delta;
         }
-
-        double div = i != 0 ? (N / 2) : N;
-        double a_i = dot(N, in, temp, jump) / div;
-        for (int j = 0; j < N; ++j) {
-            out[j * jump] += temp[j];
-        }
+        
+        a_i *= sqrt((double)2 / (double)N);
+        out[i * jump] = a_i;
     }
     
-    delete[] temp;
+    delete[] f;
 }
 
 void dct2(int N, int M, double *in, double *out) {
-    for (int i = 0; i < M; ++i) {
-        dct(N, in + i, out + i, M);
+    for (int i = 0; i < N * M; ++i) {
+        out[i] = 0;
     }
 
+    // Rows
     for (int i = 0; i < N; ++i) {
         dct(M, in + i * M, out + i * M, 1);
     }
+
+    // Columns
+    for (int i = 0; i < M; ++i) {
+        dct(N, out + i, out + i, M);
+    }
+
 }
 
 
@@ -145,15 +150,29 @@ void test() {
         outArr[i] /= (2 * sqrt(8 / 2));
         std::cout << outArr[i] << ", ";
     }
+    outArr[7] /= (2 * sqrt(8 / 2));
     std::cout << outArr[7] << std::endl;
 
     std::cout << std::endl;
 
-    dct2(8, 8, testIn, testOut);
+    double *out2 = new double[64];
+
+    
+
+    dct2(8, 8, testIn, out2);
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
-            std::cout << testOut[8 * i + j] << " ";
+            std::cout << out2[8 * i + j] << " ";
         }
         std::cout << std::endl;
     }
+
+    std::cout << std::endl;
+
+    double *outArr2 = new double[8];
+    dct(8, arrTest, outArr2);
+    for (int i = 0; i < 7; ++i) {
+        std::cout << outArr2[i] << ", ";
+    }
+    std::cout << outArr2[7] << std::endl;
 }
