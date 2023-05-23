@@ -74,3 +74,6 @@ CMakeLists.txt.user*
 
 .vscode/
 custom_implementation/build
+
+
+*.csv

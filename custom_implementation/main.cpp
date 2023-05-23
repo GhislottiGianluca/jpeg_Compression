@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fftw3.h>
 #include "timer.h"
+#include <fstream>
 
 void dct(int N, double *in, double *out, int jump = 1) {
 
@@ -11,8 +12,8 @@ void dct(int N, double *in, double *out, int jump = 1) {
     }
 
     for (int i = 0; i < N; ++i) {
+
         double delta = i != 0 ? 1 : ((double)1 / sqrt(2.0));
-        
         double a_i = 0;
         
         for (int j = 0; j < N; ++j) {
@@ -64,29 +65,49 @@ void fastDCT(int N, double *in, double *out) {
 }
 
 void test();
+void compare();
 
 int main() {
+    test();
+    compare();
+}
+
+
+void compare() {
+    std::vector<int> dim;
+    std::vector<double> timeSlow;
+    std::vector<double> timeFast;
+
     Timer timer;
-    /*
-    for (int N = 10; N <= 5000; N += 10) {
+    for (int N = 10; N <= 1500; N += 100) {
         double * out = new double[N * N];
         double *in = new double[N * N];
         for (int i = 0; i < N * N; ++i) {
-            in[i] = 10;
+            in[i] = random() * 100;
         }
         
         timer.tic();
-        fastDCT2(N, in, out);
+        fastDCT2(N, N, in, out);
         timer.toc();
-        std::cout << out[i] << std::endl;
 
-        std::cout << "N = " << N <<  ". Elapsed " << timer.elapsedMilliseconds() << " ms" << std::endl;
+
+        std::cout << "Fast. N = " << N <<  ". Elapsed " << timer.elapsedMilliseconds() << " ms" << std::endl;
+        timeFast.push_back(timer.elapsedMilliseconds());
+        timer.tic();
+        dct2(N, N, in, out);
+        timer.toc();
+        std::cout << "Classic. N = " << N <<  ". Elapsed " << timer.elapsedMilliseconds() << " ms" << std::endl;
+        timeSlow.push_back(timer.elapsedMilliseconds());
+        dim.push_back(N);
         
-    }*/
-
-    test();
+        
+        std::ofstream file("results.csv");
+        file << "N,fast,slow\n";
+        for (int i = 0; i < dim.size(); ++i) {
+            file << dim[i] << "," << timeFast[i] << "," << timeSlow[i] << "\n";
+        }
+    }
 }
-
 
 void test() {
         double testIn[64] = {231, 32, 233, 161, 24, 71, 140, 245,
