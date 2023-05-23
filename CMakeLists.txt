@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
+include(ExternalProject)
+
 project(jpeg_compression VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
@@ -18,6 +20,26 @@ set(PROJECT_SOURCES
         mainwindow.h
         mainwindow.ui
 )
+
+MESSAGE(STATUS "Trying to install fftw...")
+
+ExternalProject_Add(project_fftw
+        #GIT_REPOSITORY https://github.com/FFTW/fftw3
+        URL http://www.fftw.org/fftw-3.3.2.tar.gz
+        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/fftw
+        CONFIGURE_COMMAND
+        ${CMAKE_CURRENT_BINARY_DIR}/fftw/src/project_fftw/configure
+        --prefix=${CMAKE_CURRENT_BINARY_DIR}/fftw/install
+        INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/fftw/install
+        )
+
+add_library(fftw STATIC IMPORTED)
+set(lib_fftw_name ${CMAKE_STATIC_LIBRARY_PREFIX}fftw3${CMAKE_STATIC_LIBRARY_SUFFIX})
+set_target_properties(fftw PROPERTIES IMPORTED_LOCATION
+        ${CMAKE_CURRENT_BINARY_DIR}/fftw/install/lib/${lib_fftw_name})
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/fftw/install/include)
+
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(jpeg_compression
@@ -43,6 +65,7 @@ else()
 endif()
 
 target_link_libraries(jpeg_compression PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+add_dependencies(jpeg_compression project_fftw)
 
 set_target_properties(jpeg_compression PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
