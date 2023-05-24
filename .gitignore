@@ -1,0 +1,12 @@
+*.DS_Store
+*.aux
+*.bcf
+main.pdf
+*.log
+*.out
+*.run*
+*.toc
+*.synctex*
+*.bbl
+*.blg
+
