@@ -46,13 +46,38 @@ BlockManager::Block::~Block() {
     delete[] values;
 }
 
-void BlockManager::apply_dct() {
+void BlockManager::apply_dct2() {
     for(auto it = blocks.begin(); it != blocks.end(); ++it)
-        (*it)->dct();
+        (*it)->dct2();
 }
 
-void BlockManager::Block::dct() {
+void BlockManager::Block::dct2() {
     fftw_plan plan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
     fftw_execute(plan);
     fftw_cleanup();
+}
+
+void BlockManager::cutFrequencies() {
+    for (Block *block : blocks) {
+        block->cutValues();
+    }
+}
+
+
+void BlockManager::Block::cutValues() {
+    int rowLimit = cutDimension - blockSize;
+    if (rowLimit < 0) {
+        rowLimit = 0;
+    }
+
+    for (int i = rowLimit; i < blockSize; ++i) {
+        int colLimit = cutDimension - i;
+        if (colLimit < 0) {
+            colLimit = 0;
+        }
+
+        for (int j = colLimit; j < blockSize; ++j) {
+            values[i * blockSize + j] = 0;
+        }
+    }
 }

@@ -75,7 +75,7 @@ void MainWindow::onCompressionFinished() {
 
 void MainWindow::startCompression(){
     BlockManager mgr = BlockManager(image, blockSize, qualityFactor);
-    mgr.apply_dct();
+    mgr.apply_dct2();
 
     emit finishCompression();
 }

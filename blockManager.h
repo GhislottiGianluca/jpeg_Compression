@@ -22,7 +22,8 @@ public:
         ~Block();
         Block(int blockSize, int cutDimension);
         void put_row(int row, QRgb *iterator);
-        void dct();
+        void dct2();
+        void cutValues();
 
         double &operator()(int row, int column) {
             return values[(row * blockSize) + column];
@@ -33,7 +34,9 @@ public:
     BlockManager(const QImage *image, int blockSize, int cutDimension);
     ~BlockManager();
     Block& getBlock(int row, int column);
-    void apply_dct();
+    void apply_dct2();
+    void cutFrequencies();
+
 
 
 private:
