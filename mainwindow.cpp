@@ -75,7 +75,7 @@ void MainWindow::startCompression(){
     QImageWriter writer;
 
     BlockManager mgr = BlockManager(image, 5, 0);
-    mgr.apply_dct();
+    mgr.apply_dct2();
 
     delete buffer;
     buffer = new QBuffer();
