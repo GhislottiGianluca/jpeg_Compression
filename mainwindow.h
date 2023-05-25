@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <thread>
 #include <QBuffer>
+#include <QPixmap>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,9 +24,9 @@ private slots:
 
     void on_sliderQuality_valueChanged(int value);
 
-    void on_buttonSave_clicked();
-
     void onCompressionFinished();
+
+    void on_blockSize_editingFinished();
 
 signals:
     void finishCompression();
@@ -33,11 +34,13 @@ signals:
 private:
     Ui::MainWindow *ui;
     int qualityFactor;
+    int blockSize;
     QBuffer *buffer;
     QImage *image;
 
-    void saveImage();
     void startCompression();
+    void updateMaximalValues();
+    void setImage(std::string targetComponent, QPixmap pixmap);
 
 };
 #endif // MAINWINDOW_H
