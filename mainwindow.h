@@ -34,6 +34,7 @@ private:
     Ui::MainWindow *ui;
     int qualityFactor;
     QBuffer *buffer;
+    QImage *image;
 
     void saveImage();
     void startCompression();

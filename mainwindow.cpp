@@ -10,12 +10,16 @@
 #include <QPushButton>
 #include <QBuffer>
 #include <iostream>
+#include <assert.h>
+#include "blockManager.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow),
     qualityFactor(90),
-    buffer(new QBuffer())
+    buffer(new QBuffer()),
+    image(nullptr)
 {
     ui->setupUi(this);
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
@@ -26,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+    //delete image;
 }
 
 void MainWindow::on_loadButton_clicked() {
@@ -40,6 +45,10 @@ void MainWindow::on_loadButton_clicked() {
         QPixmap bitmap(select);
         label->setPixmap(bitmap);
         label->setAlignment(Qt::AlignCenter);
+
+        //delete image;
+        image = new QImage(bitmap.toImage());
+
         delete scroll->widget();
         scroll->setWidget(label);
         findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
@@ -62,9 +71,12 @@ void MainWindow::onCompressionFinished() {
     findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed (" + QString::number((double)buffer->buffer().size() / 1000.0) +  " KB)</h3>");
 }
 
-
 void MainWindow::startCompression(){
     QImageWriter writer;
+
+    BlockManager mgr = BlockManager(image, 5, 0);
+    mgr.apply_dct();
+
     delete buffer;
     buffer = new QBuffer();
     writer.setDevice(buffer);
