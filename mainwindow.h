@@ -37,6 +37,7 @@ private:
     int blockSize;
     QBuffer *buffer;
     QImage *image;
+    QImage *imageCompressed;
 
     void startCompression();
     void updateMaximalValues();

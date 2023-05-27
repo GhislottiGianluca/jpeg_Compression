@@ -14,15 +14,16 @@
 #include <assert.h>
 #include <algorithm>
 #include "blockManager.h"
-
+#include <QColor>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow),
-    qualityFactor(40),
+    qualityFactor(2),
     buffer(new QBuffer()),
     image(nullptr),
-    blockSize(2)
+    imageCompressed(nullptr),
+    blockSize(10)
 {
     ui->setupUi(this);
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
@@ -66,6 +67,7 @@ void MainWindow::onCompressionFinished() {
     label->setAlignment(Qt::AlignCenter);
     QScrollArea *scroll = findChild<QScrollArea*>("scrollCompressed");
     QPixmap compressed;
+    compressed.convertFromImage(*imageCompressed);
 
     label->setPixmap(compressed);
     delete scroll->widget();
@@ -76,6 +78,22 @@ void MainWindow::onCompressionFinished() {
 void MainWindow::startCompression(){
     BlockManager mgr = BlockManager(image, blockSize, qualityFactor);
     mgr.apply_dct2();
+    mgr.cutFrequencies();
+    mgr.apply_idct2();
+
+    delete imageCompressed;
+    imageCompressed = new QImage(*image);
+
+    BlockManager::Iterator it = mgr.begin();
+    BlockManager::Iterator end = mgr.end();
+
+    for(int i = 0; i < mgr.columns * blockSize; ++i){
+        for(int j = 0; j < mgr.rows * blockSize && it != end; ++j){
+            imageCompressed->setPixel(i, j, QColor(*it, *it, *it).rgb());
+            ++it;
+        }
+    }
+
 
     emit finishCompression();
 }
@@ -83,14 +101,16 @@ void MainWindow::startCompression(){
 void MainWindow::on_sliderQuality_valueChanged(int value) {
     findChild<QLabel*>("labelQualityValue")->setText(QString::number(value));
     qualityFactor = value;
-    startCompression();
+    if(image != nullptr)
+        startCompression();
 }
 
 
 void MainWindow::on_blockSize_editingFinished() {
     blockSize = findChild<QSpinBox*>("blockSize")->value();
     updateMaximalValues();
-    startCompression();
+    if(image != nullptr)
+        startCompression();
 }
 
 void MainWindow::updateMaximalValues() {
