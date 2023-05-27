@@ -11,11 +11,11 @@ BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension)
         blocks.push_back(new Block(blockSize, cutDimension));
     }
 
-    for(int i = 0; i < this->imgHeight; ++i) {
+    for(int i = 0; i < this->imgHeight - imgHeight % blockSize; ++i) {
         int row = (int)(i / blockSize);
-        for(int j = 0; j < this->imgWidth; ++j) {
+        for(int j = 0; j < this->imgWidth - imgWidth % blockSize; ++j) {
             Block& block = getBlock(row, j / blockSize);
-            block(i % blockSize, j % blockSize) = qGray(image->pixel(i, j));
+            block(i % blockSize, j % blockSize) = qGray(image->pixel(j, i));
         }
     }
 
@@ -58,8 +58,7 @@ void BlockManager::Block::idct2() {
     fftw_plan plan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
     fftw_execute(plan);
 
-    double denominator = (4 * sqrt(blockSize / 2) * sqrt(blockSize / 2));
-    denominator = denominator * denominator;
+    double denominator = 4 * blockSize * blockSize;
 
     for(int i = 0; i < blockSize; ++i) {
         for(int j = 0; j < blockSize; ++j) {
