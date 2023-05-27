@@ -87,13 +87,18 @@ void MainWindow::startCompression(){
     BlockManager::Iterator it = mgr.begin();
     BlockManager::Iterator end = mgr.end();
 
-    for(int i = 0; i < mgr.columns * blockSize; ++i){
-        for(int j = 0; j < mgr.rows * blockSize && it != end; ++j){
-            imageCompressed->setPixel(i, j, QColor(*it, *it, *it).rgb());
-            ++it;
+    for (int row = 0; row < mgr.imgHeight / blockSize; ++row) {
+        for (int col = 0; col < mgr.imgWidth / blockSize; ++col) {
+            for (int i = 0; i < blockSize; ++i) {
+                for (int j = 0; j < blockSize; ++j) {
+                    int value = mgr.getBlock(row, col)(i, j);
+                    if (value > 255) value = 255;
+                    if (value < 0) value = 0;
+                    imageCompressed->setPixel(col * blockSize + j, row * blockSize + i,  QColor(value, value, value).rgba());
+                }
+            }
         }
     }
-
 
     emit finishCompression();
 }

@@ -129,7 +129,7 @@ void test() {
 
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
-           idctOut[8 * i + j] /= (4 * sqrt(8 / 2) * sqrt(8 / 2)) * (4 * sqrt(8 / 2) * sqrt(8 / 2));
+           idctOut[8 * i + j] /= 64 * 4;
             /*if (i == 0){
                 idctOut[i * 8 + j] /= sqrt(2);
             }
