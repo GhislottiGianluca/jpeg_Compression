@@ -1,5 +1,5 @@
 #include <iostream>
-//#include <fftw3.h>
+#include <fftw3.h>
 #include "timer.h"
 #include <fstream>
 #include <cmath>
@@ -84,7 +84,7 @@ void idct2(int N, int M, double *in, double *out) {
     }
 }
 
-/*void fastDCT2(int N, int M, double *in, double *out){
+void fastDCT2(int N, int M, double *in, double *out){
     fftw_plan plan = fftw_plan_r2r_2d(N, M, in, out,   FFTW_REDFT10,   FFTW_REDFT10, 0);
     fftw_execute(plan);
     fftw_cleanup();
@@ -100,19 +100,21 @@ void fastDCT(int N, double *in, double *out) {
     fftw_plan plan = fftw_plan_r2r_1d(N, in, out, FFTW_REDFT10, 0);
     fftw_execute(plan);
     fftw_cleanup();
-}*/
+}
 
 void test();
 void compare();
+void testIDCT();
 
 int main() {
-    test();
+    //test();
     //compare();
+    testIDCT();
 }
 
 
 void compare() {
-    /*std::vector<int> dim;
+    std::vector<int> dim;
     std::vector<double> timeSlow;
     std::vector<double> timeFast;
 
@@ -145,7 +147,6 @@ void compare() {
             file << dim[i] << "," << timeFast[i] << "," << timeSlow[i] << "\n";
         }
     }
-    */
 }
 
 void test() {
@@ -160,36 +161,6 @@ void test() {
 
     double *testOut = new double[64];
     double *idctOut = new double[64];
-
-    for (int i = 0; i < 8; ++i) {
-        for (int j = 0; j < 8; ++j) {
-            std::cout << testIn[8 * i + j] << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    dct2(8, 8, testIn, testOut);
-    for (int i = 0; i < 8; ++i) {
-        for (int j = 0; j < 8; ++j) {
-            std::cout << testOut[8 * i + j] << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    idct2(8, 8, testOut, idctOut);
-    for (int i = 0; i < 8; ++i) {
-        for (int j = 0; j < 8; ++j) {
-            std::cout << idctOut[8 * i + j] << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    /*
-
     fastDCT2(8, 8, &testIn[0], testOut);
    
 
@@ -205,7 +176,7 @@ void test() {
             
             if (j == 0) {
                 idctOut[i * 8 + j] /= sqrt(2);
-            }
+            }*/
             std::cout << idctOut[8 * i + j] << " ";
         }
         std::cout << std::endl;
@@ -265,6 +236,45 @@ void test() {
         std::cout << outArr2[i] << ", ";
     }
     std::cout << outArr2[7] << std::endl;
+}
 
-    */
+void testIDCT(){
+    double testIn[64] = {231, 32, 233, 161, 24, 71, 140, 245,
+                        247, 40, 248, 245, 124, 204, 36, 107,
+                        234, 202, 245, 167, 9, 217, 239, 173,
+                        193, 190, 100, 167, 43, 180, 8, 70,
+                        11, 24, 210, 177, 81, 243, 8, 112,
+                        97, 195, 203, 47, 125, 114, 165, 181,
+                        193, 70, 174, 167, 41, 30, 127, 245,
+                        87, 149, 57, 192, 65, 129, 178, 228};
+
+    double *testOut = new double[64];
+    double *idctOut = new double[64];
+
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) {
+            std::cout << testIn[8 * i + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    dct2(8, 8, testIn, testOut);
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) {
+            std::cout << testOut[8 * i + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    idct2(8, 8, testOut, idctOut);
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) {
+            std::cout << idctOut[8 * i + j] << " ";
+        }
+        std::cout << std::endl;
+    }
 }
