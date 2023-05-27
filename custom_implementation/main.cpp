@@ -1,7 +1,8 @@
 #include <iostream>
-#include <fftw3.h>
+//#include <fftw3.h>
 #include "timer.h"
 #include <fstream>
+#include <cmath>
 
 void dct(int N, double *in, double *out, int jump = 1) {
 
@@ -37,15 +38,14 @@ void idct(int N, double *in, double *out, int jump = 1) {
 
     for (int i = 0; i < N; ++i) {
 
-        double delta = i != 0 ? 1 : ((double)1 / sqrt(2.0));
-        double a_i = 0;
+        double delta = sqrt((double)2 / (double)N);
+        double c_i = 0;
         
         for (int j = 0; j < N; ++j) {
-            a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N)) * delta;
+            c_i += f[j] * delta * cos(j * M_PI * (2 * i + 1) / (2 * N));
         }
-        
-        a_i *= sqrt((double)2 / (double)N);
-        out[i * jump] = a_i;
+
+        out[i * jump] = c_i * delta;
     }
 
     delete [] f;
@@ -69,10 +69,22 @@ void dct2(int N, int M, double *in, double *out) {
 
 void idct2(int N, int M, double *in, double *out) {
 
-    
+    for (int i = 0; i < N * M; ++i) {
+        out[i] = 0;
+    }
+
+    // Rows
+    for (int i = 0; i < N; ++i) {
+        idct(M, in + i * M, out + i * M, 1);
+    }
+
+    // Columns
+    for (int i = 0; i < M; ++i) {
+        idct(N, out + i, out + i, M);
+    }
 }
 
-void fastDCT2(int N, int M, double *in, double *out){
+/*void fastDCT2(int N, int M, double *in, double *out){
     fftw_plan plan = fftw_plan_r2r_2d(N, M, in, out,   FFTW_REDFT10,   FFTW_REDFT10, 0);
     fftw_execute(plan);
     fftw_cleanup();
@@ -88,19 +100,19 @@ void fastDCT(int N, double *in, double *out) {
     fftw_plan plan = fftw_plan_r2r_1d(N, in, out, FFTW_REDFT10, 0);
     fftw_execute(plan);
     fftw_cleanup();
-}
+}*/
 
 void test();
 void compare();
 
 int main() {
     test();
-    compare();
+    //compare();
 }
 
 
 void compare() {
-    std::vector<int> dim;
+    /*std::vector<int> dim;
     std::vector<double> timeSlow;
     std::vector<double> timeFast;
 
@@ -133,6 +145,7 @@ void compare() {
             file << dim[i] << "," << timeFast[i] << "," << timeSlow[i] << "\n";
         }
     }
+    */
 }
 
 void test() {
@@ -147,6 +160,36 @@ void test() {
 
     double *testOut = new double[64];
     double *idctOut = new double[64];
+
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) {
+            std::cout << testIn[8 * i + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    dct2(8, 8, testIn, testOut);
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) {
+            std::cout << testOut[8 * i + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    idct2(8, 8, testOut, idctOut);
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) {
+            std::cout << idctOut[8 * i + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    /*
+
     fastDCT2(8, 8, &testIn[0], testOut);
    
 
@@ -162,7 +205,7 @@ void test() {
             
             if (j == 0) {
                 idctOut[i * 8 + j] /= sqrt(2);
-            }*/
+            }
             std::cout << idctOut[8 * i + j] << " ";
         }
         std::cout << std::endl;
@@ -222,4 +265,6 @@ void test() {
         std::cout << outArr2[i] << ", ";
     }
     std::cout << outArr2[7] << std::endl;
+
+    */
 }
