@@ -27,6 +27,30 @@ void dct(int N, double *in, double *out, int jump = 1) {
     delete[] f;
 }
 
+void idct(int N, double *in, double *out, int jump = 1) {
+
+    double *f = new double[N];
+
+    for (int i = 0; i < N; ++i) {
+        f[i] = in[i * jump];
+    }
+
+    for (int i = 0; i < N; ++i) {
+
+        double delta = i != 0 ? 1 : ((double)1 / sqrt(2.0));
+        double a_i = 0;
+        
+        for (int j = 0; j < N; ++j) {
+            a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N)) * delta;
+        }
+        
+        a_i *= sqrt((double)2 / (double)N);
+        out[i * jump] = a_i;
+    }
+
+    delete [] f;
+}
+
 void dct2(int N, int M, double *in, double *out) {
     for (int i = 0; i < N * M; ++i) {
         out[i] = 0;
@@ -41,10 +65,12 @@ void dct2(int N, int M, double *in, double *out) {
     for (int i = 0; i < M; ++i) {
         dct(N, out + i, out + i, M);
     }
-
 }
 
+void idct2(int N, int M, double *in, double *out) {
 
+    
+}
 
 void fastDCT2(int N, int M, double *in, double *out){
     fftw_plan plan = fftw_plan_r2r_2d(N, M, in, out,   FFTW_REDFT10,   FFTW_REDFT10, 0);
@@ -125,7 +151,7 @@ void test() {
    
 
 
-     fastIDCT2(8, 8, testOut, idctOut);
+    fastIDCT2(8, 8, testOut, idctOut);
 
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
