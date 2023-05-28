@@ -2,6 +2,8 @@
 #include <fftw3.h>
 #include "timer.h"
 #include <fstream>
+#include <math.h>
+#include <vector>
 
 void dct(int N, double *in, double *out, int jump = 1) {
 
