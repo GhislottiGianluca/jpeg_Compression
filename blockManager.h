@@ -9,6 +9,8 @@
 #include <iterator>
 #include <cstddef>
 #include <iostream>
+#include <thread>
+#include <fftw3.h>
 
 typedef double pixel;
 
@@ -18,17 +20,21 @@ public:
 
     struct Block {
     private:
-        pixel *values;
+
         int blockSize;
         int cutDimension;
+        fftw_plan dct_plan;
+        fftw_plan idct_plan;
 
     public:
+        pixel *values;
         ~Block();
         Block(int blockSize, int cutDimension);
         void put_row(int row, QRgb *iterator);
         void dct2();
         void idct2();
         void cutValues();
+        void setCutDimension(int cutDimension);
 
         double &operator()(int row, int column) {
             return values[(row * blockSize) + column];
@@ -100,9 +106,9 @@ public:
     Block& getBlock(int row, int column);
     Iterator begin();
     Iterator end();
-    void apply_dct2();
-    void apply_idct2();
     void cutFrequencies();
+    void setCutDimension(int cutDimension);
+    QImage* compress();
 
 public:
     int rows;
@@ -110,9 +116,12 @@ public:
     int imgWidth;
     int imgHeight;
 
+    void updateImage(const QImage &image);
+
 private:
     std::vector<Block*> blocks;
     int blockSize;
+    std::vector<std::thread*> workers;
 };
 
 

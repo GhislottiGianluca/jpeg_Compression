@@ -5,6 +5,7 @@
 #include <thread>
 #include <QBuffer>
 #include <QPixmap>
+#include "blockManager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -38,6 +39,7 @@ private:
     QBuffer *buffer;
     QImage *image;
     QImage *imageCompressed;
+    BlockManager *blockManager;
 
     void startCompression();
     void updateMaximalValues();

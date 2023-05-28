@@ -23,10 +23,12 @@ MainWindow::MainWindow(QWidget *parent)
     buffer(new QBuffer()),
     image(nullptr),
     imageCompressed(nullptr),
-    blockSize(10)
+    blockSize(10),
+    blockManager(nullptr)
 {
     ui->setupUi(this);
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
+    updateMaximalValues();
 
     connect(this, SIGNAL(finishCompression()), this, SLOT(onCompressionFinished()));
 }
@@ -57,7 +59,7 @@ void MainWindow::on_loadButton_clicked() {
         findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
         findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed</h3>");
         updateMaximalValues();
-
+        blockManager = new BlockManager(image, blockSize, qualityFactor);
         startCompression();
     }
 }
@@ -76,29 +78,8 @@ void MainWindow::onCompressionFinished() {
 }
 
 void MainWindow::startCompression(){
-    BlockManager mgr = BlockManager(image, blockSize, qualityFactor);
-    mgr.apply_dct2();
-    mgr.cutFrequencies();
-    mgr.apply_idct2();
-
     delete imageCompressed;
-    imageCompressed = new QImage(*image);
-
-    BlockManager::Iterator it = mgr.begin();
-    BlockManager::Iterator end = mgr.end();
-
-    for (int row = 0; row < mgr.imgHeight / blockSize; ++row) {
-        for (int col = 0; col < mgr.imgWidth / blockSize; ++col) {
-            for (int i = 0; i < blockSize; ++i) {
-                for (int j = 0; j < blockSize; ++j) {
-                    int value = mgr.getBlock(row, col)(i, j);
-                    if (value > 255) value = 255;
-                    if (value < 0) value = 0;
-                    imageCompressed->setPixel(col * blockSize + j, row * blockSize + i,  QColor(value, value, value).rgba());
-                }
-            }
-        }
-    }
+    imageCompressed = blockManager->compress();
 
     emit finishCompression();
 }
@@ -106,21 +87,26 @@ void MainWindow::startCompression(){
 void MainWindow::on_sliderQuality_valueChanged(int value) {
     findChild<QLabel*>("labelQualityValue")->setText(QString::number(value));
     qualityFactor = value;
-    if(image != nullptr)
+    if(image != nullptr) {
+        blockManager->setCutDimension(qualityFactor);
+        blockManager->updateImage(*image);
         startCompression();
+    }
 }
 
 
 void MainWindow::on_blockSize_editingFinished() {
     blockSize = findChild<QSpinBox*>("blockSize")->value();
     updateMaximalValues();
-    if(image != nullptr)
+    if(image != nullptr){
+        blockManager = new BlockManager(image, blockSize, qualityFactor);
         startCompression();
+    }
 }
 
 void MainWindow::updateMaximalValues() {
     if(image != nullptr)
         findChild<QSpinBox*>("blockSize")->setProperty("maximum", std::min(image->width(), image->height()));
-    findChild<QSlider*>("sliderQuality")->setProperty("maximum", 2 * (blockSize - 1));
+    findChild<QSlider*>("sliderQuality")->setProperty("maximum", 2 * blockSize - 1);
 }
 
