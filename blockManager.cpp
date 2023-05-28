@@ -4,12 +4,29 @@
 #include <thread>
 BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension): imgWidth(image->width()), imgHeight(image->height()), blockSize(blockSize) {
 
+
     this->rows = floor(imgHeight / blockSize);
     this->columns = floor(imgWidth / blockSize);
 
-    for(int i = 0; i < this->rows * this->columns; ++i) {
-        blocks.push_back(new Block(blockSize, cutDimension));
+    blocks = new Block*[rows * columns];
+
+    for(int i = 0; i < rows - 1; ++i) {
+        for (int j = 0; j < columns - 1; ++j) {
+            blocks[i * columns + j] = new Block(blockSize, blockSize, cutDimension);
+        }
     }
+
+    int lastRowHeight = blockSize + imgHeight % blockSize;
+    for (int j = 0; j < columns - 1; ++j) {
+        blocks[(rows - 1) * columns + j] = new Block(lastRowHeight, blockSize, cutDimension);
+    }
+
+    int lastColWidth = blockSize + imgWidth % blockSize;
+    for (int i = 0; i < rows - 1; ++i) {
+        blocks[i * columns + columns - 1] = new Block(blockSize, lastColWidth, cutDimension);
+    }
+
+    blocks[(rows - 1) * columns + columns - 1] = new Block(lastRowHeight, lastColWidth, cutDimension);
 
     updateImage(*image);
 }
@@ -20,20 +37,21 @@ BlockManager::Block& BlockManager::getBlock(int row, int column) {
 }
 
 void BlockManager::Block::put_row(int row, QRgb *iterator) {
-    for(int i = 0; i < blockSize; ++i){
-        values[(row * blockSize) + i] = qGray(iterator[i]);
+    for(int i = 0; i < height; ++i){
+        values[(row * width) + i] = qGray(iterator[i]);
     }
 }
 
-BlockManager::Block::Block(int blockSize, int cutDimension): blockSize(blockSize), cutDimension(cutDimension), values(nullptr) {
-    values = new double[blockSize * blockSize];
-    dct_plan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
-    idct_plan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
+BlockManager::Block::Block(int height, int width, int cutDimension): height(height), width(width), cutDimension(cutDimension), values(nullptr) {
+    values = new double[width * height];
+    dct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 }
 
 BlockManager::~BlockManager() {
-    for (int i = 0; i < blocks.size(); ++i)
+    for (int i = 0; i < rows * columns; ++i)
         delete blocks[i];
+    delete[] blocks;
 }
 
 BlockManager::Block::~Block() {
@@ -45,8 +63,8 @@ BlockManager::Block::~Block() {
 
 QImage* BlockManager::compress() {
     QImage *out = new QImage(imgWidth, imgHeight, QImage::Format_RGB32);
-    int coreCount = std::thread::hardware_concurrency();
-    workers = std::vector<std::thread*>();
+    int coreCount = ceil(sqrt((double) std::thread::hardware_concurrency()));
+
 
 
     int rows = imgHeight / blockSize;
@@ -59,36 +77,29 @@ QImage* BlockManager::compress() {
         coreCount = cols;
     }
 
-
     int rowsPerThread = ceil((double)rows / (double)coreCount);
     int colsPerThread = ceil((double)cols / (double)coreCount);
 
+    workers = new std::thread*[ceil((double)rows / (double)rowsPerThread) * ceil((double)columns / (double)colsPerThread)];
+
     QRgb *imageBits = (QRgb*)out->bits();
+
+    int threadsCount = 0;
     for (int threadRow = 0; threadRow * rowsPerThread < rows; ++threadRow) {
         for (int threadCol = 0; threadCol * colsPerThread < cols; ++threadCol) {
 
-            workers.push_back(new std::thread([rows, cols, rowsPerThread, colsPerThread, threadCol, threadRow, this, out, imageBits] () {
+            workers[threadsCount] = new std::thread([rows, cols, rowsPerThread, colsPerThread, threadCol, threadRow, this, out, imageBits] () {
                 for (int i = threadRow * rowsPerThread; i < threadRow * rowsPerThread + rowsPerThread && i < rows; ++i) {
                     for (int j = threadCol * colsPerThread; j < threadCol * colsPerThread + colsPerThread && j < cols; ++j) {
                         Block &block = getBlock(i, j);
-                        for(int k = 0; k < blockSize; ++k) {
-                            for(int h = 0; h < blockSize; ++h) {
-                                block(k, h) -= 128;
-                            }
-                        }
+
                         block.dct2();
                         block.cutValues();
                         block.idct2();
 
-                        for(int k = 0; k < blockSize; ++k) {
-                            for(int h = 0; h < blockSize; ++h) {
-                                block(k, h) += 128;
-                            }
-                        }
+                        for (int pixelRow = 0; pixelRow <  block.height; ++pixelRow) {
 
-                        for (int pixelRow = 0; pixelRow <  blockSize; ++pixelRow) {
-
-                            for (int pixelCol = 0; pixelCol < blockSize; ++pixelCol) {
+                            for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
                                 int value = block(pixelRow, pixelCol);
                                 if (value < 0) value = 0;
                                 if (value > 255) value = 255;
@@ -101,30 +112,19 @@ QImage* BlockManager::compress() {
                         }
                     }
                 }
-            }));
+            });
+
+            threadsCount++;
         }
     }
 
-
-
-    for (auto thread : workers) {
-        thread->join();
-        delete thread;
+    for (int i = 0; i < threadsCount; ++i) {
+        workers[i]->join();
+        delete workers[i];
     }
 
-    for (int j = 0; j < imgWidth; ++j) {
-        QRgb valueToCopy = out->pixel(j, blockSize * rows - 1);
-        for (int i = rows * blockSize; i < imgHeight; ++ i) {
-            out->setPixel(j, i, valueToCopy);
-        }
-    }
-
-    for (int i = 0; i < imgHeight; ++i) {
-        QRgb valueToCopy = out->pixel(blockSize * cols - 1, i);
-        for (int j = cols * blockSize; j < imgWidth; ++j) {
-            out->setPixel(j, i, valueToCopy);
-        }
-    }
+    delete[] workers;
+    workers = nullptr;
 
 
     return out;
@@ -134,10 +134,10 @@ QImage* BlockManager::compress() {
 void BlockManager::Block::idct2() {
     fftw_execute(idct_plan);
 
-    double denominator = 4 * blockSize * blockSize;
+    double denominator = 4 * width * height;
 
-    for(int i = 0; i < blockSize; ++i) {
-        for(int j = 0; j < blockSize; ++j) {
+    for(int i = 0; i < height; ++i) {
+        for(int j = 0; j < width; ++j) {
             operator()(i, j) = (operator()(i, j) / denominator);
         }
     }
@@ -148,8 +148,8 @@ void BlockManager::Block::dct2() {
 }
 
 void BlockManager::cutFrequencies() {
-    for (Block *block : blocks) {
-        block->cutValues();
+    for (int i = 0; i < rows * columns; ++i) {
+        blocks[i]->cutValues();
     }
 }
 
@@ -166,35 +166,39 @@ BlockManager::Iterator BlockManager::end() {
 }
 
 void BlockManager::Block::cutValues() {
-    int rowLimit = cutDimension - blockSize;
+    int rowLimit = cutDimension - height;
     if (rowLimit < 0) {
         rowLimit = 0;
     }
 
-    for (int i = rowLimit; i < blockSize; ++i) {
+    for (int i = rowLimit; i < height; ++i) {
         int colLimit = cutDimension - i;
         if (colLimit < 0) {
             colLimit = 0;
         }
 
-        for (int j = colLimit; j < blockSize; ++j) {
-            values[i * blockSize + j] = 0;
+        for (int j = colLimit; j < width; ++j) {
+            values[i * width + j] = 0;
         }
     }
 }
 
 void BlockManager::setCutDimension(int cutDimension) {
-    for (Block *block : blocks) {
-        block->setCutDimension(cutDimension);
+    for (int i = 0; i < rows * columns; ++i) {
+        blocks[i]->setCutDimension(cutDimension);
     }
 }
 
 void BlockManager::updateImage(const QImage &image) {
-    for(int i = 0; i < this->imgHeight - imgHeight % blockSize; ++i) {
-        int row = (int)(i / blockSize);
-        for(int j = 0; j < this->imgWidth - imgWidth % blockSize; ++j) {
-            Block& block = getBlock(row, j / blockSize);
-            block(i % blockSize, j % blockSize) = qGray(image.pixel(j, i));
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < columns; ++j) {
+            Block &block = getBlock(i, j);
+            for (int pixelRow = 0; pixelRow < block.height; ++pixelRow) {
+                for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
+                    block(pixelRow, pixelCol) = qGray(image.pixel(j * blockSize + pixelCol, i * blockSize + pixelRow));
+                }
+            }
         }
     }
 }

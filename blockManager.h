@@ -21,15 +21,17 @@ public:
     struct Block {
     private:
 
-        int blockSize;
+
         int cutDimension;
         fftw_plan dct_plan;
         fftw_plan idct_plan;
 
     public:
+        int height;
+        int width;
         pixel *values;
         ~Block();
-        Block(int blockSize, int cutDimension);
+        Block(int height, int width, int cutDimension);
         void put_row(int row, QRgb *iterator);
         void dct2();
         void idct2();
@@ -37,7 +39,7 @@ public:
         void setCutDimension(int cutDimension);
 
         double &operator()(int row, int column) {
-            return values[(row * blockSize) + column];
+            return values[(row * width) + column];
         }
     };
 
@@ -119,9 +121,9 @@ public:
     void updateImage(const QImage &image);
 
 private:
-    std::vector<Block*> blocks;
+    Block** blocks;
     int blockSize;
-    std::vector<std::thread*> workers;
+    std::thread** workers;
 };
 
 
