@@ -1,0 +1,14 @@
+	
+\part{Implementazione della DCT2}
+
+Lo scopo di questa parte del progetto è stato quello di implementare la nostra versione della DCT2 e confrontare i tempi di esecuzione con quelli di una libreria che implementa la versione fast della DCT2. L'implementazione utilizzata è la FFTW \cite{fftw} ed è scritta in C.
+
+Per testare la scalatura eseguita da FFTW, applichiamo una dct e una idct su una matrice di partenza per poi testare se tali valori corrispondono tra loro. Dalla differenza dei risultati ottenuti, abbiamo osservato che viene introdotto un errore durante le operazioni non superiore ad 1e$^{-14}$. Consideriamo tale errore di approssimazione accettabile, osservando che la differenza tra 2 double successivi è pari a 2.22045e$^{-16}$.
+
+
+
+
+L'implementazione "fatta in casa" della DCT2 e dell'analoga IDCT2 è stata implementata tramite la sua versione ad una singola dimensione, infatti una 2-D discrete cosine transform è semplicemente una doppia applicazione della versione ad una dimensione. Così facendo, abbiamo codificato la cosine transform ad una singola dimensione, per poi chiamarla sia sulle righe che sulle colonne, ottenendo quindi una 2-D cosine transform.
+
+
+
