@@ -5,8 +5,16 @@ Lo scopo di questa parte del progetto è stato quello di implementare la nostra 
 
 Per testare la scalatura eseguita da FFTW, applichiamo una dct e una idct su una matrice di partenza per poi testare se tali valori corrispondono tra loro. Dalla differenza dei risultati ottenuti, abbiamo osservato che viene introdotto un errore durante le operazioni non superiore ad 1e$^{-14}$. Consideriamo tale errore di approssimazione accettabile, osservando che la differenza tra 2 double successivi è pari a 2.22045e$^{-16}$.
 
+L'implementazione "fatta in casa" della DCT2 e dell'analoga IDCT2 è stata implementata tramite la sua versione ad una singola dimensione, infatti una 2-D discrete cosine transform è semplicemente una doppia applicazione della versione ad una dimensione. Così facendo, abbiamo codificato la cosine transform ad una singola dimensione, per poi chiamarla sia sulle righe che sulle colonne, ottenendo in questo modo una 2-D cosine transform.
 
-L'implementazione "fatta in casa" della DCT2 e dell'analoga IDCT2 è stata implementata tramite la sua versione ad una singola dimensione, infatti una 2-D discrete cosine transform è semplicemente una doppia applicazione della versione ad una dimensione. Così facendo, abbiamo codificato la cosine transform ad una singola dimensione, per poi chiamarla sia sulle righe che sulle colonne, ottenendo quindi una 2-D cosine transform.
+All'interno del codice sono stati aggiunti una serie di test (tramite l'uso delle assert) all'interno dei quali viene verificato l'esito dell'applicazione della DCT e della IDCT sulla matrice e sul vettore fornito. Successivamente l'esecuzione del codice prosegue verificando i tempi e generando un csv contenente i risultati delle esecuzioni su matrici man mano sempre più grandi. Dai risultati presenti nell'immagine \ref{fig:timings}, si può osservare come l'implementazione "fatta in casa" (in figura denominata \textit{Slow}) abbia effettivamente un andamento più esponenziale rispetto la liberia (in figura \textit{Fast}). Un fenomeno particolare che si osserva è che mentre la matrice è ancora di dimensioni molto ristrette la dct implementata fatta da noi supera quella fast.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.3]{figures/timings}
+	\caption{Tempi}
+	\label{fig:timings}	
+\end{figure}
 
 
-
+\FloatBarrier
