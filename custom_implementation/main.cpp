@@ -38,13 +38,15 @@ void idct(int N, double *in, double *out, int jump = 1) {
 
     for (int i = 0; i < N; ++i) {
 
-        double delta = sqrt((double)2 / (double)N);
-        double c_i = 0;
         
+        double c_i = 0;
+        double delta;
         for (int j = 0; j < N; ++j) {
+            delta = j != 0 ? 1 : ((double)1 / sqrt(2.0));
             c_i += f[j] * delta * cos(j * M_PI * (2 * i + 1) / (2 * N));
         }
 
+        c_i *= sqrt((double)2 / (double)N);
         out[i * jump] = c_i * delta;
     }
 
@@ -87,6 +89,7 @@ void idct2(int N, int M, double *in, double *out) {
 void fastDCT2(int N, int M, double *in, double *out){
     fftw_plan plan = fftw_plan_r2r_2d(N, M, in, out,   FFTW_REDFT10,   FFTW_REDFT10, 0);
     fftw_execute(plan);
+    fftw_destroy_plan(plan);
     fftw_cleanup();
 }
 
@@ -99,6 +102,7 @@ void fastIDCT2(int N, int M, double *in, double *out) {
 void fastDCT(int N, double *in, double *out) {
     fftw_plan plan = fftw_plan_r2r_1d(N, in, out, FFTW_REDFT10, 0);
     fftw_execute(plan);
+    fftw_destroy_plan(plan);
     fftw_cleanup();
 }
 
@@ -107,9 +111,11 @@ void compare();
 void testIDCT();
 
 int main() {
-    //test();
-    //compare();
+    test();
     testIDCT();
+    compare();
+
+    return 0;
 }
 
 
@@ -169,14 +175,7 @@ void test() {
 
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
-           idctOut[8 * i + j] /= 64 * 4;
-            /*if (i == 0){
-                idctOut[i * 8 + j] /= sqrt(2);
-            }
-            
-            if (j == 0) {
-                idctOut[i * 8 + j] /= sqrt(2);
-            }*/
+            idctOut[8 * i + j] /= 64 * 4;
             std::cout << idctOut[8 * i + j] << " ";
         }
         std::cout << std::endl;
