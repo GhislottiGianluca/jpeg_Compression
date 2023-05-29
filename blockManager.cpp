@@ -96,13 +96,15 @@ void BlockManager::cutValues(int row, int column) {
     int blockWidth = getBlockWidth(row, column);
     int blockHeight = getBlockHeight(row, column);
 
-    int rowLimit = cutDimension - blockHeight;
+    int d = ceil(((double)std::max(std::max(blockHeight, blockWidth), blockSize)) / (double)blockSize) * (double)cutDimension;
+
+    int rowLimit = d - blockHeight;
     if (rowLimit < 0) {
         rowLimit = 0;
     }
 
     for (int i = rowLimit; i < blockHeight; ++i) {
-        int colLimit = cutDimension - i;
+        int colLimit = d - i;
         if (colLimit < 0) {
             colLimit = 0;
         }
