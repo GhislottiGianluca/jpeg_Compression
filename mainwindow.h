@@ -29,6 +29,10 @@ private slots:
 
     void on_blockSize_editingFinished();
 
+    void on_zoomIn_clicked();
+
+    void on_zoomOut_clicked();
+
 signals:
     void finishCompression();
 
@@ -40,10 +44,11 @@ private:
     QImage *image;
     QImage *imageCompressed;
     BlockManager *blockManager;
+    double scaleFactor;
 
     void startCompression();
     void updateMaximalValues();
-    void setImage(std::string targetComponent, QPixmap pixmap);
+    void updateImageSize(double scaleFactor);
 
 };
 #endif // MAINWINDOW_H

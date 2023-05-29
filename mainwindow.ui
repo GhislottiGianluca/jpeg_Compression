@@ -141,19 +141,40 @@
      </layout>
     </item>
     <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="zoomIn">
+        <property name="text">
+         <string>Zoom In</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="zoomOut">
+        <property name="text">
+         <string>Zoom Out</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <widget class="QScrollArea" name="scrollOriginal">
         <property name="widgetResizable">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <widget class="QWidget" name="layoutOriginal">
          <property name="geometry">
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>409</width>
-           <height>674</height>
+           <width>416</width>
+           <height>711</height>
           </rect>
          </property>
         </widget>
@@ -162,15 +183,15 @@
       <item>
        <widget class="QScrollArea" name="scrollCompressed">
         <property name="widgetResizable">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <widget class="QWidget" name="layout2">
          <property name="geometry">
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>409</width>
-           <height>674</height>
+           <width>415</width>
+           <height>681</height>
           </rect>
          </property>
         </widget>
@@ -186,7 +207,7 @@
      <x>0</x>
      <y>0</y>
      <width>858</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

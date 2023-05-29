@@ -16,6 +16,8 @@
 #include "blockManager.h"
 #include <QColor>
 
+#define ZOOM_SCALE_INCREMENT  0.5
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow),
@@ -24,7 +26,8 @@ MainWindow::MainWindow(QWidget *parent)
     image(nullptr),
     imageCompressed(nullptr),
     blockSize(10),
-    blockManager(nullptr)
+    blockManager(nullptr),
+    scaleFactor(1)
 {
     ui->setupUi(this);
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
@@ -49,7 +52,9 @@ void MainWindow::on_loadButton_clicked() {
         QLabel *label = new QLabel();
         QScrollArea *scroll = findChild<QScrollArea*>("scrollOriginal");
         QPixmap bitmap(select);
+        label->setObjectName("originalImage");
         label->setPixmap(bitmap);
+        label->setScaledContents(true);
         label->setAlignment(Qt::AlignCenter);
 
         auto *oldImage = image;
@@ -57,10 +62,13 @@ void MainWindow::on_loadButton_clicked() {
         scroll->setWidget(label);
         delete oldImage;
 
+
+
         findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
         findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed</h3>");
         updateMaximalValues();
         blockManager = new BlockManager(image, blockSize, qualityFactor);
+
         startCompression();
     }
 }
@@ -73,7 +81,9 @@ void MainWindow::onCompressionFinished() {
     compressed.convertFromImage(*imageCompressed);
 
     label->setPixmap(compressed);
+    label->setObjectName("compressedImage");
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
+    label->setScaledContents(true);
     scroll->setWidget(label);
 
 }
@@ -112,4 +122,32 @@ void MainWindow::updateMaximalValues() {
         findChild<QSpinBox*>("blockSize")->setProperty("maximum", std::min(image->width(), image->height()));
     findChild<QSlider*>("sliderQuality")->setProperty("maximum", 2 * blockSize - 1);
 }
+
+
+void MainWindow::on_zoomIn_clicked()
+{
+    scaleFactor += ZOOM_SCALE_INCREMENT;
+    updateImageSize(scaleFactor);
+}
+
+void MainWindow::on_zoomOut_clicked()
+{
+    if(scaleFactor - ZOOM_SCALE_INCREMENT <= 0)
+        return;
+
+    scaleFactor -= ZOOM_SCALE_INCREMENT;
+    updateImageSize(scaleFactor);
+}
+
+
+void MainWindow::updateImageSize(double scaleFactor){
+    QLabel *originalImageLabel = findChild<QLabel*>("originalImage");
+    if(originalImageLabel != nullptr)
+        originalImageLabel->resize(scaleFactor * originalImageLabel->pixmap().size());
+
+    QLabel *compressedImageLabel = findChild<QLabel*>("compressedImage");
+    if(compressedImageLabel != nullptr)
+        compressedImageLabel->resize(scaleFactor * compressedImageLabel->pixmap().size());
+}
+
 
