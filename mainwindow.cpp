@@ -36,13 +36,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(this, SIGNAL(finishCompression()), this, SLOT(onCompressionFinished()));
 
-    auto *scrollOriginal = findChild<QScrollArea*>("scrollOriginal");
-    connect(scrollOriginal->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_original(int)));
-    connect(scrollOriginal->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_original(int)));
+    QScrollBar *horizontalScroll = findChild<QScrollBar*>("horizontalScrollBar");
+    QScrollBar *verticalScroll = findChild<QScrollBar*>("verticalScrollBar");
 
-    auto *scrollCompressed = findChild<QScrollArea*>("scrollCompressed");
-    connect(scrollCompressed->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_compressed(int)));
-    connect(scrollCompressed->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_compressed(int)));
+    horizontalScroll->setHidden(true);
+    verticalScroll->setHidden(true);
 }
 
 MainWindow::~MainWindow()
@@ -67,13 +65,13 @@ void MainWindow::on_loadButton_clicked() {
         label->setAlignment(Qt::AlignCenter);
         scroll->setWidget(label);
 
+        scaleFactor = 1;
+
         if (image == nullptr) {
             image = new QImage(bitmap.toImage());
         } else {
             *image = bitmap.toImage();
         }
-
-
 
         findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
         findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed</h3>");
@@ -96,6 +94,7 @@ void MainWindow::onCompressionFinished() {
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
     label->setScaledContents(true);
     scroll->setWidget(label);
+    updateScrollBar();
 }
 
 void MainWindow::startCompression(){
@@ -106,20 +105,15 @@ void MainWindow::startCompression(){
     emit finishCompression();
 }
 
-void MainWindow::on_scroll_original(int value) {
+void MainWindow::updateScrollBar() {
     QScrollArea *scrollOriginal = findChild<QScrollArea*>("scrollOriginal");
     QScrollArea *scrollCompressed = findChild<QScrollArea*>("scrollCompressed");
 
-    scrollCompressed->verticalScrollBar()->setValue(scrollOriginal->verticalScrollBar()->value());
-    scrollCompressed->horizontalScrollBar()->setValue(scrollOriginal->horizontalScrollBar()->value());
-}
+    scrollCompressed->verticalScrollBar()->setValue(verticalScrollValue);
+    scrollCompressed->horizontalScrollBar()->setValue(horizontalScrollValue);
 
-void MainWindow::on_scroll_compressed(int value) {
-    QScrollArea *scrollOriginal = findChild<QScrollArea*>("scrollOriginal");
-    QScrollArea *scrollCompressed = findChild<QScrollArea*>("scrollCompressed");
-
-    scrollOriginal->verticalScrollBar()->setValue(scrollCompressed->verticalScrollBar()->value());
-    scrollOriginal->horizontalScrollBar()->setValue(scrollCompressed->horizontalScrollBar()->value());
+    scrollOriginal->verticalScrollBar()->setValue(verticalScrollValue);
+    scrollOriginal->horizontalScrollBar()->setValue(horizontalScrollValue);
 }
 
 void MainWindow::on_sliderQuality_valueChanged(int value) {
@@ -149,6 +143,24 @@ void MainWindow::updateMaximalValues() {
         blockSize = std::min(blockSize, std::min(image->width(), image->height()));
     }
     findChild<QSlider*>("sliderQuality")->setProperty("maximum", 2 * blockSize - 1);
+    updateScrollBar();
+
+    auto *scroll = findChild<QScrollArea*>("scrollOriginal");
+
+    QScrollBar *horizontalScroll = findChild<QScrollBar*>("horizontalScrollBar");
+    if(scroll->horizontalScrollBar()->maximum() == 0)
+        horizontalScroll->setHidden(true);
+    else
+        horizontalScroll->setHidden(false);
+    horizontalScroll->setMaximum(scroll->horizontalScrollBar()->maximum());
+
+
+    QScrollBar *verticalScroll = findChild<QScrollBar*>("verticalScrollBar");
+    if(scroll->verticalScrollBar()->maximum() == 0)
+        verticalScroll->setHidden(true);
+    else
+        verticalScroll->setHidden(false);
+    verticalScroll->setMaximum(scroll->verticalScrollBar()->maximum());
 }
 
 
@@ -170,12 +182,36 @@ void MainWindow::on_zoomOut_clicked()
 
 void MainWindow::updateImageSize(double scaleFactor){
     QLabel *originalImageLabel = findChild<QLabel*>("originalImage");
-    if(originalImageLabel != nullptr)
-        originalImageLabel->resize(scaleFactor * originalImageLabel->pixmap().size());
+    if(originalImageLabel != nullptr){
+        originalImageLabel->setPixmap(QPixmap::fromImage(image->scaled(image->width() * scaleFactor, image->height() * scaleFactor)));
+        originalImageLabel->resize(originalImageLabel->pixmap().size());
+    }
 
     QLabel *compressedImageLabel = findChild<QLabel*>("compressedImage");
-    if(compressedImageLabel != nullptr)
-        compressedImageLabel->resize(scaleFactor * compressedImageLabel->pixmap().size());
+    if(compressedImageLabel != nullptr){
+        compressedImageLabel->setPixmap(QPixmap::fromImage(imageCompressed->scaled(imageCompressed->width() * scaleFactor, imageCompressed->height() * scaleFactor)));
+        compressedImageLabel->resize(compressedImageLabel->pixmap().size());
+    }
+
+    updateMaximalValues();
 }
 
+void MainWindow::resizeEvent(QResizeEvent *event) {
+    QMainWindow::resizeEvent(event);
+    updateMaximalValues();
+}
+
+
+void MainWindow::on_horizontalScrollBar_valueChanged(int value)
+{
+    horizontalScrollValue = value;
+    updateScrollBar();
+}
+
+
+void MainWindow::on_verticalScrollBar_valueChanged(int value)
+{
+    verticalScrollValue = value;
+    updateScrollBar();
+}
 

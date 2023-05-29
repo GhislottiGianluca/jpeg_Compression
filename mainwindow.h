@@ -34,9 +34,9 @@ private slots:
 
     void on_zoomOut_clicked();
 
-    void on_scroll_original(int value);
+    void on_horizontalScrollBar_valueChanged(int value);
 
-    void on_scroll_compressed(int value);
+    void on_verticalScrollBar_valueChanged(int value);
 
 signals:
     void finishCompression();
@@ -50,12 +50,14 @@ private:
     QImage *imageCompressed;
     BlockManager *blockManager;
     double scaleFactor;
-    int horizontalScrollBar;
-    int verticalScrollBar;
+    long int horizontalScrollValue;
+    long int verticalScrollValue;
 
+    void resizeEvent(QResizeEvent *event);
     void startCompression();
     void updateMaximalValues();
     void updateImageSize(double scaleFactor);
+    void updateScrollBar();
 
 };
 #endif // MAINWINDOW_H
