@@ -5,6 +5,7 @@
 #include <thread>
 #include <QBuffer>
 #include <QPixmap>
+#include <QAbstractScrollArea>
 #include "blockManager.h"
 
 QT_BEGIN_NAMESPACE
@@ -33,6 +34,10 @@ private slots:
 
     void on_zoomOut_clicked();
 
+    void on_scroll_original(int value);
+
+    void on_scroll_compressed(int value);
+
 signals:
     void finishCompression();
 
@@ -45,6 +50,8 @@ private:
     QImage *imageCompressed;
     BlockManager *blockManager;
     double scaleFactor;
+    int horizontalScrollBar;
+    int verticalScrollBar;
 
     void startCompression();
     void updateMaximalValues();

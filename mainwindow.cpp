@@ -13,6 +13,7 @@
 #include <iostream>
 #include <assert.h>
 #include <algorithm>
+#include <QScrollBar>
 #include "blockManager.h"
 #include <QColor>
 
@@ -34,6 +35,14 @@ MainWindow::MainWindow(QWidget *parent)
     updateMaximalValues();
 
     connect(this, SIGNAL(finishCompression()), this, SLOT(onCompressionFinished()));
+
+    auto *scrollOriginal = findChild<QScrollArea*>("scrollOriginal");
+    connect(scrollOriginal->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_original(int)));
+    connect(scrollOriginal->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_original(int)));
+
+    auto *scrollCompressed = findChild<QScrollArea*>("scrollCompressed");
+    connect(scrollCompressed->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_compressed(int)));
+    connect(scrollCompressed->horizontalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(on_scroll_compressed(int)));
 }
 
 MainWindow::~MainWindow()
@@ -95,6 +104,22 @@ void MainWindow::startCompression(){
     delete oldImage;
 
     emit finishCompression();
+}
+
+void MainWindow::on_scroll_original(int value) {
+    QScrollArea *scrollOriginal = findChild<QScrollArea*>("scrollOriginal");
+    QScrollArea *scrollCompressed = findChild<QScrollArea*>("scrollCompressed");
+
+    scrollCompressed->verticalScrollBar()->setValue(scrollOriginal->verticalScrollBar()->value());
+    scrollCompressed->horizontalScrollBar()->setValue(scrollOriginal->horizontalScrollBar()->value());
+}
+
+void MainWindow::on_scroll_compressed(int value) {
+    QScrollArea *scrollOriginal = findChild<QScrollArea*>("scrollOriginal");
+    QScrollArea *scrollCompressed = findChild<QScrollArea*>("scrollCompressed");
+
+    scrollOriginal->verticalScrollBar()->setValue(scrollCompressed->verticalScrollBar()->value());
+    scrollOriginal->horizontalScrollBar()->setValue(scrollCompressed->horizontalScrollBar()->value());
 }
 
 void MainWindow::on_sliderQuality_valueChanged(int value) {
