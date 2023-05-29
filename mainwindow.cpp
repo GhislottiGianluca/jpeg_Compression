@@ -46,16 +46,18 @@ void MainWindow::on_loadButton_clicked() {
         file.open(QIODevice::ReadOnly);
         double size = file.size();
         file.close();
-        QLabel *label = new QLabel();
-        QScrollArea *scroll = findChild<QScrollArea*>("scrollOriginal");
+        auto *label = new QLabel();
+        auto *scroll = findChild<QScrollArea*>("scrollOriginal");
         QPixmap bitmap(select);
         label->setPixmap(bitmap);
         label->setAlignment(Qt::AlignCenter);
-
-        auto *oldImage = image;
-        image = new QImage(bitmap.toImage());
         scroll->setWidget(label);
-        delete oldImage;
+
+        if (image == nullptr) {
+            image = new QImage(bitmap.toImage());
+        } else {
+            *image = bitmap.toImage();
+        }
 
         findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
         findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed</h3>");
@@ -75,7 +77,6 @@ void MainWindow::onCompressionFinished() {
     label->setPixmap(compressed);
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
     scroll->setWidget(label);
-
 }
 
 void MainWindow::startCompression(){
@@ -98,18 +99,20 @@ void MainWindow::on_sliderQuality_valueChanged(int value) {
 
 
 void MainWindow::on_blockSize_editingFinished() {
-    int newBlockSize = findChild<QSpinBox*>("blockSize")->value();
-    if(image != nullptr && newBlockSize != blockSize){
-        blockSize = newBlockSize;
+    blockSize = findChild<QSpinBox*>("blockSize")->value();
+    updateMaximalValues();
+
+    if(image != nullptr){
         blockManager = new BlockManager(image, blockSize, qualityFactor);
         startCompression();
     }
-    updateMaximalValues();
 }
 
 void MainWindow::updateMaximalValues() {
-    if(image != nullptr)
+    if(image != nullptr) {
         findChild<QSpinBox*>("blockSize")->setProperty("maximum", std::min(image->width(), image->height()));
+        blockSize = std::min(blockSize, std::min(image->width(), image->height()));
+    }
     findChild<QSlider*>("sliderQuality")->setProperty("maximum", 2 * blockSize - 1);
 }
 
