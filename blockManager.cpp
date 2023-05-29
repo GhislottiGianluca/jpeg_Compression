@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fftw3.h>
 #include <thread>
+#include <cmath>
 
 void BlockManager::parallelTask(const std::function<void(int, int)> &function, bool wait) {
     int coreCount = ceil(sqrt((double) std::thread::hardware_concurrency())) * 2;
@@ -9,7 +10,7 @@ void BlockManager::parallelTask(const std::function<void(int, int)> &function, b
     int rowsPerThread = ceil((double)rows / (double)coreCount);
     int colsPerThread = ceil((double)columns / (double)coreCount);
 
-    workers = new std::thread*[ceil((double)rows / (double)rowsPerThread) * ceil((double)columns / (double)colsPerThread)];
+    workers = new std::thread*[(int)(ceil((double)rows / (double)rowsPerThread) * ceil((double)columns / (double)colsPerThread))];
 
     threadsCount = 0;
     for (int threadRow = 0; threadRow * rowsPerThread < rows; ++threadRow) {
