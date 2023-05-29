@@ -2,19 +2,56 @@
 #include <iostream>
 #include <fftw3.h>
 #include <thread>
-BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension): imgWidth(image->width()), imgHeight(image->height()), blockSize(blockSize) {
+
+void BlockManager::parallelTask(const std::function<void(int, int)> &function, bool wait) {
+    int coreCount = ceil(sqrt((double) std::thread::hardware_concurrency())) * 2;
+
+    int rowsPerThread = ceil((double)rows / (double)coreCount);
+    int colsPerThread = ceil((double)columns / (double)coreCount);
+
+    workers = new std::thread*[ceil((double)rows / (double)rowsPerThread) * ceil((double)columns / (double)colsPerThread)];
+
+    threadsCount = 0;
+    for (int threadRow = 0; threadRow * rowsPerThread < rows; ++threadRow) {
+        for (int threadCol = 0; threadCol * colsPerThread < columns; ++threadCol) {
+            workers[threadsCount] = new std::thread([&function, threadRow, threadCol, rowsPerThread, colsPerThread, this](){
+                for (int i = threadRow * rowsPerThread; i < threadRow * rowsPerThread + rowsPerThread && i < rows; ++i) {
+                    for (int j = threadCol * colsPerThread; j < threadCol * colsPerThread + colsPerThread && j < columns; ++j) {
+                        function(i, j);
+                    }
+                }
+
+            });
+            threadsCount++;
+        }
+    }
+
+    if (!wait) {
+        return;
+    }
+
+    for (int i = 0; i < threadsCount; ++i) {
+        workers[i]->join();
+        delete workers[i];
+    }
+
+    delete[] workers;
+    workers = nullptr;
+}
 
 
-    this->rows = floor(imgHeight / blockSize);
-    this->columns = floor(imgWidth / blockSize);
+BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension): imgWidth(image->width()), imgHeight(image->height()), blockSize(blockSize), threadsCount(0) {
+
+    rows = imgHeight / blockSize;
+    columns = imgWidth / blockSize;
 
     blocks = new Block*[rows * columns];
 
-    for(int i = 0; i < rows - 1; ++i) {
-        for (int j = 0; j < columns - 1; ++j) {
+    parallelTask([&](int i, int j){
+        if (i < rows - 1 && j < columns - 1) {
             blocks[i * columns + j] = new Block(blockSize, blockSize, cutDimension);
         }
-    }
+    });
 
     int lastRowHeight = blockSize + imgHeight % blockSize;
     for (int j = 0; j < columns - 1; ++j) {
@@ -27,6 +64,9 @@ BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension)
     }
 
     blocks[(rows - 1) * columns + columns - 1] = new Block(lastRowHeight, lastColWidth, cutDimension);
+    for (int i = 0; i < rows * columns; ++i) {
+        blocks[i]->createPlans();
+    }
 
     updateImage(*image);
 }
@@ -44,8 +84,6 @@ void BlockManager::Block::put_row(int row, QRgb *iterator) {
 
 BlockManager::Block::Block(int height, int width, int cutDimension): height(height), width(width), cutDimension(cutDimension), values(nullptr) {
     values = new double[width * height];
-    dct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
-    idct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 }
 
 BlockManager::~BlockManager() {
@@ -61,71 +99,37 @@ BlockManager::Block::~Block() {
     fftw_cleanup();
 }
 
+void BlockManager::Block::createPlans() {
+    dct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
+}
+
 QImage* BlockManager::compress() {
     QImage *out = new QImage(imgWidth, imgHeight, QImage::Format_RGB32);
-    int coreCount = ceil(sqrt((double) std::thread::hardware_concurrency()));
-
-
-
-    int rows = imgHeight / blockSize;
-    int cols = imgWidth / blockSize;
-
-    if (rows < coreCount) {
-        coreCount = rows;
-    }
-    if (cols < coreCount) {
-        coreCount = cols;
-    }
-
-    int rowsPerThread = ceil((double)rows / (double)coreCount);
-    int colsPerThread = ceil((double)cols / (double)coreCount);
-
-    workers = new std::thread*[ceil((double)rows / (double)rowsPerThread) * ceil((double)columns / (double)colsPerThread)];
 
     QRgb *imageBits = (QRgb*)out->bits();
 
-    int threadsCount = 0;
-    for (int threadRow = 0; threadRow * rowsPerThread < rows; ++threadRow) {
-        for (int threadCol = 0; threadCol * colsPerThread < cols; ++threadCol) {
+    parallelTask([&](int i, int j){
+        Block &block = getBlock(i, j);
 
-            workers[threadsCount] = new std::thread([rows, cols, rowsPerThread, colsPerThread, threadCol, threadRow, this, out, imageBits] () {
-                for (int i = threadRow * rowsPerThread; i < threadRow * rowsPerThread + rowsPerThread && i < rows; ++i) {
-                    for (int j = threadCol * colsPerThread; j < threadCol * colsPerThread + colsPerThread && j < cols; ++j) {
-                        Block &block = getBlock(i, j);
+        block.dct2();
+        block.cutValues();
+        block.idct2();
 
-                        block.dct2();
-                        block.cutValues();
-                        block.idct2();
+        for (int pixelRow = 0; pixelRow <  block.height; ++pixelRow) {
 
-                        for (int pixelRow = 0; pixelRow <  block.height; ++pixelRow) {
+            for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
+                int value = block(pixelRow, pixelCol);
+                if (value < 0) value = 0;
+                if (value > 255) value = 255;
 
-                            for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
-                                int value = block(pixelRow, pixelCol);
-                                if (value < 0) value = 0;
-                                if (value > 255) value = 255;
+                int realRow = i * (blockSize * columns + imgWidth % blockSize) * blockSize + pixelRow * (blockSize * columns + imgWidth % blockSize);
+                int realCol = j * blockSize + pixelCol;
 
-                                int realRow = i * (blockSize * cols + imgWidth % blockSize) * blockSize + pixelRow * (blockSize * cols + imgWidth % blockSize);
-                                int realCol = j * blockSize + pixelCol;
-
-                                imageBits[realRow + realCol] = QColor(value, value, value).rgba();
-                            }
-                        }
-                    }
-                }
-            });
-
-            threadsCount++;
+                imageBits[realRow + realCol] = QColor(value, value, value).rgba();
+            }
         }
-    }
-
-    for (int i = 0; i < threadsCount; ++i) {
-        workers[i]->join();
-        delete workers[i];
-    }
-
-    delete[] workers;
-    workers = nullptr;
-
+    });
 
     return out;
 }
@@ -190,15 +194,15 @@ void BlockManager::setCutDimension(int cutDimension) {
 }
 
 void BlockManager::updateImage(const QImage &image) {
-
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < columns; ++j) {
-            Block &block = getBlock(i, j);
-            for (int pixelRow = 0; pixelRow < block.height; ++pixelRow) {
-                for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
-                    block(pixelRow, pixelCol) = qGray(image.pixel(j * blockSize + pixelCol, i * blockSize + pixelRow));
-                }
+    QRgb * imageBits = (QRgb*)image.bits();
+    parallelTask([&](int i, int j){
+        Block &block = getBlock(i, j);
+        for (int pixelRow = 0; pixelRow < block.height; ++pixelRow) {
+            for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
+                int realRow = i * (blockSize * columns + imgWidth % blockSize) * blockSize + pixelRow * (blockSize * columns + imgWidth % blockSize);
+                int realCol = j * blockSize + pixelCol;
+                block(pixelRow, pixelCol) = qGray(imageBits[realRow + realCol]);
             }
         }
-    }
+    });
 }

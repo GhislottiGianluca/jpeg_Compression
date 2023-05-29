@@ -37,6 +37,7 @@ public:
         void idct2();
         void cutValues();
         void setCutDimension(int cutDimension);
+        void createPlans();
 
         double &operator()(int row, int column) {
             return values[(row * width) + column];
@@ -121,9 +122,11 @@ public:
     void updateImage(const QImage &image);
 
 private:
+    int threadsCount;
     Block** blocks;
     int blockSize;
     std::thread** workers;
+    void parallelTask(const std::function<void(int, int)> &function, bool wait = true);
 };
 
 
