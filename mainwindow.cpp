@@ -95,6 +95,7 @@ void MainWindow::onCompressionFinished() {
     label->setScaledContents(true);
     scroll->setWidget(label);
     updateScrollBar();
+    updateImageSize(scaleFactor);
 }
 
 void MainWindow::startCompression(){
