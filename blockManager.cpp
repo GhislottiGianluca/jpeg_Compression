@@ -4,7 +4,7 @@
 #include <thread>
 
 void BlockManager::parallelTask(const std::function<void(int, int)> &function, bool wait) {
-    int coreCount = ceil(sqrt((double) std::thread::hardware_concurrency())) * 2;
+    int coreCount = ceil(sqrt((double) std::thread::hardware_concurrency()));
 
     int rowsPerThread = ceil((double)rows / (double)coreCount);
     int colsPerThread = ceil((double)columns / (double)coreCount);
@@ -40,93 +40,132 @@ void BlockManager::parallelTask(const std::function<void(int, int)> &function, b
 }
 
 
-BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension): imgWidth(image->width()), imgHeight(image->height()), blockSize(blockSize), threadsCount(0) {
+BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension): workers(nullptr), imgWidth(image->width()), imgHeight(image->height()), blockSize(blockSize), threadsCount(0), cutDimension(cutDimension) {
 
     rows = imgHeight / blockSize;
     columns = imgWidth / blockSize;
 
-    blocks = new Block*[rows * columns];
+    values = new double[imgHeight * imgWidth];
+    dctPlan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idctPlan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 
-    parallelTask([&](int i, int j){
-        if (i < rows - 1 && j < columns - 1) {
-            blocks[i * columns + j] = new Block(blockSize, blockSize, cutDimension);
-        }
-    });
+    dctPlanLastRow = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idctPlanLastRow = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 
-    int lastRowHeight = blockSize + imgHeight % blockSize;
-    for (int j = 0; j < columns - 1; ++j) {
-        blocks[(rows - 1) * columns + j] = new Block(lastRowHeight, blockSize, cutDimension);
-    }
+    dctPlanLastColumn = fftw_plan_r2r_2d(blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idctPlanLastColumn = fftw_plan_r2r_2d(blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 
-    int lastColWidth = blockSize + imgWidth % blockSize;
-    for (int i = 0; i < rows - 1; ++i) {
-        blocks[i * columns + columns - 1] = new Block(blockSize, lastColWidth, cutDimension);
-    }
-
-    blocks[(rows - 1) * columns + columns - 1] = new Block(lastRowHeight, lastColWidth, cutDimension);
-    for (int i = 0; i < rows * columns; ++i) {
-        blocks[i]->createPlans();
-    }
+    dctPlanLastElement = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idctPlanLastElement = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 
     updateImage(*image);
 }
 
 
-BlockManager::Block& BlockManager::getBlock(int row, int column) {
-    return *blocks[(row * this->columns) + column];
+double* BlockManager::getBlock(int row, int column) {
+    int lastColumn = row * ((imgWidth % blockSize + blockSize) * blockSize);
+    int lastRowPixels = column * blockSize * blockSize;
+    if (row == rows - 1) {
+        lastRowPixels = column * blockSize * (blockSize + (imgHeight % blockSize));
+    }
+    int centerPixels = row * (columns - 1) * blockSize * blockSize;
+
+    return &values[lastColumn + lastRowPixels + centerPixels];
 }
 
-void BlockManager::Block::put_row(int row, QRgb *iterator) {
-    for(int i = 0; i < height; ++i){
-        values[(row * width) + i] = qGray(iterator[i]);
+
+BlockManager::~BlockManager() {
+    delete[] values;
+    delete[] workers;
+    fftw_destroy_plan(dctPlan);
+    fftw_destroy_plan(idctPlan);
+    fftw_destroy_plan(dctPlanLastRow);
+    fftw_destroy_plan(idctPlanLastRow);
+    fftw_destroy_plan(dctPlanLastColumn);
+    fftw_destroy_plan(idctPlanLastColumn);
+    fftw_destroy_plan(dctPlanLastElement);
+    fftw_destroy_plan(idctPlanLastElement);
+}
+
+
+void BlockManager::cutValues(int row, int column) {
+    double *block = getBlock(row, column);
+
+    int blockWidth = getBlockWidth(row, column);
+    int blockHeight = getBlockHeight(row, column);
+
+    int rowLimit = cutDimension - blockHeight;
+    if (rowLimit < 0) {
+        rowLimit = 0;
+    }
+
+    for (int i = rowLimit; i < blockHeight; ++i) {
+        int colLimit = cutDimension - i;
+        if (colLimit < 0) {
+            colLimit = 0;
+        }
+
+        for (int j = colLimit; j < blockWidth; ++j) {
+            block[i * blockWidth + j] = 0;
+        }
     }
 }
 
-BlockManager::Block::Block(int height, int width, int cutDimension): height(height), width(width), cutDimension(cutDimension), values(nullptr) {
-    values = new double[width * height];
+fftw_plan BlockManager::selectDctPlan(int i, int j) {
+    if (i < rows - 1 && j < columns - 1) {
+        return dctPlan;
+    }
+    if (i < rows - 1 && j == columns - 1) {
+        return dctPlanLastColumn;
+    }
+    if (i == rows - 1 && j < columns - 1) {
+        return dctPlanLastRow;
+    }
+    return dctPlanLastElement;
 }
 
-BlockManager::~BlockManager() {
-    for (int i = 0; i < rows * columns; ++i)
-        delete blocks[i];
-    delete[] blocks;
-}
-
-BlockManager::Block::~Block() {
-    delete[] values;
-    fftw_destroy_plan(dct_plan);
-    fftw_destroy_plan(idct_plan);
-    fftw_cleanup();
-}
-
-void BlockManager::Block::createPlans() {
-    dct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
-    idct_plan = fftw_plan_r2r_2d(height, width, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
+fftw_plan BlockManager::selectIdctPlan(int i, int j) {
+    if (i < rows - 1 && j < columns - 1) {
+        return idctPlan;
+    }
+    if (i < rows - 1 && j == columns - 1) {
+        return idctPlanLastColumn;
+    }
+    if (i == rows - 1 && j < columns - 1) {
+        return idctPlanLastRow;
+    }
+    return idctPlanLastElement;
 }
 
 QImage* BlockManager::compress() {
-    QImage *out = new QImage(imgWidth, imgHeight, QImage::Format_RGB32);
-
+    auto *out = new QImage(imgWidth, imgHeight, QImage::Format_RGB32);
     QRgb *imageBits = (QRgb*)out->bits();
 
     parallelTask([&](int i, int j){
-        Block &block = getBlock(i, j);
+        double* block = getBlock(i, j);
+        int blockWidth = getBlockWidth(i, j);
+        int blockHeight = getBlockHeight(i, j);
 
-        block.dct2();
-        block.cutValues();
-        block.idct2();
+        fftw_plan dct = selectDctPlan(i, j);
+        fftw_plan idct = selectIdctPlan(i, j);
 
-        for (int pixelRow = 0; pixelRow <  block.height; ++pixelRow) {
+        fftw_execute_r2r(dct, block, block);
+        cutValues(i, j);
+        fftw_execute_r2r(idct, block, block);
 
-            for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
-                int value = block(pixelRow, pixelCol);
-                if (value < 0) value = 0;
-                if (value > 255) value = 255;
+        int count = 0;
+        for (int pixelRow = 0; pixelRow <  blockHeight; ++pixelRow) {
+            for (int pixelCol = 0; pixelCol < blockWidth; ++pixelCol) {
 
                 int realRow = i * (blockSize * columns + imgWidth % blockSize) * blockSize + pixelRow * (blockSize * columns + imgWidth % blockSize);
                 int realCol = j * blockSize + pixelCol;
 
+                int value = (int)(block[count] / (4 * blockWidth * blockHeight));
+                if (value < 0) value = 0;
+                if (value > 255) value = 255;
+
                 imageBits[realRow + realCol] = QColor(value, value, value).rgba();
+                ++count;
             }
         }
     });
@@ -134,75 +173,41 @@ QImage* BlockManager::compress() {
     return out;
 }
 
-
-void BlockManager::Block::idct2() {
-    fftw_execute(idct_plan);
-
-    double denominator = 4 * width * height;
-
-    for(int i = 0; i < height; ++i) {
-        for(int j = 0; j < width; ++j) {
-            operator()(i, j) = (operator()(i, j) / denominator);
-        }
-    }
-}
-
-void BlockManager::Block::dct2() {
-    fftw_execute(dct_plan);
-}
-
-void BlockManager::cutFrequencies() {
-    for (int i = 0; i < rows * columns; ++i) {
-        blocks[i]->cutValues();
-    }
-}
-
-void BlockManager::Block::setCutDimension(int cutDimension) {
-    this->cutDimension = cutDimension;
-}
-
-BlockManager::Iterator BlockManager::begin() {
-    return BlockManager::Iterator(blockSize, 0, 0, getBlock(0, 0), *this);
-}
-
-BlockManager::Iterator BlockManager::end() {
-    return BlockManager::Iterator(-1, rows, columns, getBlock(rows - 1, columns - 1), *this);
-}
-
-void BlockManager::Block::cutValues() {
-    int rowLimit = cutDimension - height;
-    if (rowLimit < 0) {
-        rowLimit = 0;
-    }
-
-    for (int i = rowLimit; i < height; ++i) {
-        int colLimit = cutDimension - i;
-        if (colLimit < 0) {
-            colLimit = 0;
-        }
-
-        for (int j = colLimit; j < width; ++j) {
-            values[i * width + j] = 0;
-        }
-    }
-}
-
-void BlockManager::setCutDimension(int cutDimension) {
-    for (int i = 0; i < rows * columns; ++i) {
-        blocks[i]->setCutDimension(cutDimension);
-    }
+void BlockManager::setCutDimension(int dimension) {
+    this->cutDimension = dimension;
 }
 
 void BlockManager::updateImage(const QImage &image) {
     QRgb * imageBits = (QRgb*)image.bits();
+
     parallelTask([&](int i, int j){
-        Block &block = getBlock(i, j);
-        for (int pixelRow = 0; pixelRow < block.height; ++pixelRow) {
-            for (int pixelCol = 0; pixelCol < block.width; ++pixelCol) {
+        int blockWidth = getBlockWidth(i, j);
+        int blockHeight = getBlockHeight(i, j);
+        double *block = getBlock(i, j);
+
+        int count = 0;
+        for (int pixelRow = 0; pixelRow < blockHeight; ++pixelRow) {
+            for (int pixelCol = 0; pixelCol < blockWidth; ++pixelCol) {
                 int realRow = i * (blockSize * columns + imgWidth % blockSize) * blockSize + pixelRow * (blockSize * columns + imgWidth % blockSize);
                 int realCol = j * blockSize + pixelCol;
-                block(pixelRow, pixelCol) = qGray(imageBits[realRow + realCol]);
+
+                block[count] = qGray(imageBits[realRow + realCol]);
+                ++count;
             }
         }
     });
+}
+
+int BlockManager::getBlockHeight(int i, int j) const {
+    if (i == rows - 1) {
+        return blockSize + (imgHeight % blockSize);
+    }
+    return blockSize;
+}
+
+int BlockManager::getBlockWidth(int i, int j) const {
+    if (j == columns - 1) {
+        return blockSize + (imgWidth % blockSize);
+    }
+    return blockSize;
 }
