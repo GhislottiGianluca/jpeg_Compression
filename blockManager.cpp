@@ -86,6 +86,7 @@ BlockManager::~BlockManager() {
     fftw_destroy_plan(idctPlanLastColumn);
     fftw_destroy_plan(dctPlanLastElement);
     fftw_destroy_plan(idctPlanLastElement);
+    fftw_cleanup();
 }
 
 
