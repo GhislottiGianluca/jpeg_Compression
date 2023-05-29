@@ -51,10 +51,11 @@ void MainWindow::on_loadButton_clicked() {
         QPixmap bitmap(select);
         label->setPixmap(bitmap);
         label->setAlignment(Qt::AlignCenter);
-        delete image;
-        delete scroll->widget();
+
+        auto *oldImage = image;
         image = new QImage(bitmap.toImage());
         scroll->setWidget(label);
+        delete oldImage;
 
         findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
         findChild<QLabel*>("labelCompressedTitle")->setText("<h3>Compressed</h3>");
@@ -72,14 +73,15 @@ void MainWindow::onCompressionFinished() {
     compressed.convertFromImage(*imageCompressed);
 
     label->setPixmap(compressed);
-    delete scroll->widget();
+    label->setAttribute(Qt::WA_TransparentForMouseEvents);
     scroll->setWidget(label);
 
 }
 
 void MainWindow::startCompression(){
-    delete imageCompressed;
+    auto *oldImage = imageCompressed;
     imageCompressed = blockManager->compress();
+    delete oldImage;
 
     emit finishCompression();
 }
@@ -96,12 +98,13 @@ void MainWindow::on_sliderQuality_valueChanged(int value) {
 
 
 void MainWindow::on_blockSize_editingFinished() {
-    blockSize = findChild<QSpinBox*>("blockSize")->value();
-    updateMaximalValues();
-    if(image != nullptr){
+    int newBlockSize = findChild<QSpinBox*>("blockSize")->value();
+    if(image != nullptr && newBlockSize != blockSize){
+        blockSize = newBlockSize;
         blockManager = new BlockManager(image, blockSize, qualityFactor);
         startCompression();
     }
+    updateMaximalValues();
 }
 
 void MainWindow::updateMaximalValues() {
