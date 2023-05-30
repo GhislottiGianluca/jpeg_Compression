@@ -43,32 +43,34 @@ void BlockManager::parallelTask(const std::function<void(int, int)> &function, b
 
 BlockManager::BlockManager(const QImage *image, int blockSize, int cutDimension): workers(nullptr), imgWidth(image->width()), imgHeight(image->height()), blockSize(blockSize), threadsCount(0), cutDimension(cutDimension) {
 
-    rows = imgHeight / blockSize;
-    columns = imgWidth / blockSize;
+    rows = ceil((double)imgHeight /(double) blockSize);
+    columns = ceil((double)imgWidth / (double)blockSize);
 
     values = new double[imgHeight * imgWidth];
     dctPlan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
     idctPlan = fftw_plan_r2r_2d(blockSize, blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 
-    dctPlanLastRow = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
-    idctPlanLastRow = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
+    int lastBlockHeight = imgHeight % blockSize == 0 ? blockSize : imgHeight % blockSize;
+    int lastBlockWidth = imgWidth % blockSize == 0 ? blockSize : imgWidth % blockSize;
 
-    dctPlanLastColumn = fftw_plan_r2r_2d(blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
-    idctPlanLastColumn = fftw_plan_r2r_2d(blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
+    dctPlanLastRow = fftw_plan_r2r_2d(lastBlockHeight, blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idctPlanLastRow = fftw_plan_r2r_2d(lastBlockHeight, blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 
-    dctPlanLastElement = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
-    idctPlanLastElement = fftw_plan_r2r_2d(blockSize + imgHeight % blockSize, blockSize + imgWidth % blockSize, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
+    dctPlanLastColumn = fftw_plan_r2r_2d(blockSize, lastBlockWidth, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idctPlanLastColumn = fftw_plan_r2r_2d(blockSize, lastBlockWidth, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
+
+    dctPlanLastElement = fftw_plan_r2r_2d(lastBlockHeight, lastBlockWidth, values, values, FFTW_REDFT10, FFTW_REDFT10, 0);
+    idctPlanLastElement = fftw_plan_r2r_2d(lastBlockHeight, lastBlockWidth, values, values, FFTW_REDFT01, FFTW_REDFT01, 0);
 
     updateImage(*image);
 }
 
 
 double* BlockManager::getBlock(int row, int column) {
-    int lastColumn = row * ((imgWidth % blockSize + blockSize) * blockSize);
-    int lastRowPixels = column * blockSize * blockSize;
-    if (row == rows - 1) {
-        lastRowPixels = column * blockSize * (blockSize + (imgHeight % blockSize));
-    }
+    int lastColumnWidth = imgWidth % blockSize == 0 ? blockSize : imgWidth % blockSize;
+    int lastRowHeight = getBlockHeight(row, column);
+    int lastColumn = row * (lastColumnWidth * blockSize);
+    int lastRowPixels = column * blockSize * lastRowHeight;
     int centerPixels = row * (columns - 1) * blockSize * blockSize;
 
     return &values[lastColumn + lastRowPixels + centerPixels];
@@ -96,15 +98,14 @@ void BlockManager::cutValues(int row, int column) {
     int blockWidth = getBlockWidth(row, column);
     int blockHeight = getBlockHeight(row, column);
 
-    int d = ceil(((double)std::max(std::max(blockHeight, blockWidth), blockSize)) / (double)blockSize) * (double)cutDimension;
 
-    int rowLimit = d - blockHeight;
+    int rowLimit = cutDimension - blockHeight;
     if (rowLimit < 0) {
         rowLimit = 0;
     }
 
     for (int i = rowLimit; i < blockHeight; ++i) {
-        int colLimit = d - i;
+        int colLimit = cutDimension - i;
         if (colLimit < 0) {
             colLimit = 0;
         }
@@ -160,8 +161,13 @@ QImage* BlockManager::compress() {
         int count = 0;
         for (int pixelRow = 0; pixelRow <  blockHeight; ++pixelRow) {
             for (int pixelCol = 0; pixelCol < blockWidth; ++pixelCol) {
+                int excessColumnWidth = imgWidth % blockSize;
+                int fullCols = columns;
+                if (excessColumnWidth > 0) {
+                    --fullCols;
+                }
 
-                int realRow = i * (blockSize * columns + imgWidth % blockSize) * blockSize + pixelRow * (blockSize * columns + imgWidth % blockSize);
+                int realRow = i * (blockSize * fullCols + excessColumnWidth) * blockSize + pixelRow * (blockSize * fullCols + excessColumnWidth);
                 int realCol = j * blockSize + pixelCol;
 
                 int value = (int)(block[count] / (4 * blockWidth * blockHeight));
@@ -192,7 +198,13 @@ void BlockManager::updateImage(const QImage &image) {
         int count = 0;
         for (int pixelRow = 0; pixelRow < blockHeight; ++pixelRow) {
             for (int pixelCol = 0; pixelCol < blockWidth; ++pixelCol) {
-                int realRow = i * (blockSize * columns + imgWidth % blockSize) * blockSize + pixelRow * (blockSize * columns + imgWidth % blockSize);
+                int excessColumnWidth = imgWidth % blockSize;
+                int fullCols = columns;
+                if (excessColumnWidth > 0) {
+                    --fullCols;
+                }
+
+                int realRow = i * (blockSize * fullCols + excessColumnWidth) * blockSize + pixelRow * (blockSize * fullCols + excessColumnWidth);
                 int realCol = j * blockSize + pixelCol;
 
                 block[count] = qGray(imageBits[realRow + realCol]);
@@ -203,15 +215,15 @@ void BlockManager::updateImage(const QImage &image) {
 }
 
 int BlockManager::getBlockHeight(int i, int j) const {
-    if (i == rows - 1) {
-        return blockSize + (imgHeight % blockSize);
+    if (i == rows - 1 && imgHeight % blockSize > 0) {
+        return imgHeight % blockSize;
     }
     return blockSize;
 }
 
 int BlockManager::getBlockWidth(int i, int j) const {
-    if (j == columns - 1) {
-        return blockSize + (imgWidth % blockSize);
+    if (j == columns - 1 && imgWidth % blockSize > 0) {
+        return imgWidth % blockSize;
     }
     return blockSize;
 }
