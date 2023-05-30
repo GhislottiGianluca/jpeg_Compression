@@ -41,6 +41,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     horizontalScroll->setHidden(true);
     verticalScroll->setHidden(true);
+
+    connect(findChild<QScrollArea*>("scrollOriginal")->horizontalScrollBar(), &QScrollBar::valueChanged, [&](int value){
+        findChild<QScrollBar*>("horizontalScrollBar")->setValue(value);
+    });
+    connect(findChild<QScrollArea*>("scrollCompressed")->horizontalScrollBar(), &QScrollBar::valueChanged, [&](int value){
+        findChild<QScrollBar*>("horizontalScrollBar")->setValue(value);
+    });
+    connect(findChild<QScrollArea*>("scrollOriginal")->verticalScrollBar(), &QScrollBar::valueChanged, [&](int value){
+        findChild<QScrollBar*>("verticalScrollBar")->setValue(value);
+    });
+    connect(findChild<QScrollArea*>("scrollCompressed")->verticalScrollBar(), &QScrollBar::valueChanged, [&](int value){
+        findChild<QScrollBar*>("verticalScrollBar")->setValue(value);
+    });
 }
 
 MainWindow::~MainWindow()
@@ -83,6 +96,9 @@ void MainWindow::on_loadButton_clicked() {
 }
 
 void MainWindow::onCompressionFinished() {
+    int oldVertical = verticalScrollValue;
+    int oldHorizontal = horizontalScrollValue;
+
     QLabel *label = new QLabel();
     label->setAlignment(Qt::AlignCenter);
     QScrollArea *scroll = findChild<QScrollArea*>("scrollCompressed");
@@ -94,8 +110,9 @@ void MainWindow::onCompressionFinished() {
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
     label->setScaledContents(true);
     scroll->setWidget(label);
-    updateScrollBar();
     updateImageSize(scaleFactor);
+    scroll->horizontalScrollBar()->setValue(oldHorizontal);
+    scroll->verticalScrollBar()->setValue(oldVertical);
 }
 
 void MainWindow::startCompression(){
@@ -115,6 +132,11 @@ void MainWindow::updateScrollBar() {
 
     scrollOriginal->verticalScrollBar()->setValue(verticalScrollValue);
     scrollOriginal->horizontalScrollBar()->setValue(horizontalScrollValue);
+
+    //QScrollBar *verticalScrollbar = findChild<QScrollBar*>("verticalScrollBar");
+    //QScrollBar *horizontalScrollbar = findChild<QScrollBar*>("horizontalScrollBar");
+    //verticalScrollbar->setValue(verticalScrollValue);
+    //horizontalScrollbar->setValue(horizontalScrollValue);
 }
 
 void MainWindow::on_sliderQuality_valueChanged(int value) {
@@ -169,6 +191,7 @@ void MainWindow::on_zoomIn_clicked()
 {
     scaleFactor += ZOOM_SCALE_INCREMENT;
     updateImageSize(scaleFactor);
+    updateMaximalValues();
 }
 
 void MainWindow::on_zoomOut_clicked()
@@ -178,6 +201,7 @@ void MainWindow::on_zoomOut_clicked()
 
     scaleFactor -= ZOOM_SCALE_INCREMENT;
     updateImageSize(scaleFactor);
+    updateMaximalValues();
 }
 
 
