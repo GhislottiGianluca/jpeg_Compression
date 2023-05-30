@@ -21,6 +21,7 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        resources.qrc
 )
 
 MESSAGE(STATUS "Trying to install fftw...")

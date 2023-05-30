@@ -31,6 +31,8 @@ MainWindow::MainWindow(QWidget *parent)
     scaleFactor(1)
 {
     ui->setupUi(this);
+    findChild<QPushButton*>("zoomIn")->setIcon(QIcon(":/icons/zoomIn.png"));
+    findChild<QPushButton*>("zoomOut")->setIcon(QIcon(":/icons/zoomOut.png"));
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
     updateMaximalValues();
 
