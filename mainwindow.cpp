@@ -61,6 +61,9 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete image;
+    delete currentPixmapSize;
+    delete blockManager;
+    delete imageCompressed;
 }
 
 void MainWindow::on_loadButton_clicked() {
