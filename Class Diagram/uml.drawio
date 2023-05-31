@@ -1,0 +1,45 @@
+<mxfile host="app.diagrams.net" modified="2023-05-31T15:16:49.430Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36" etag="jiQd55MVN82cMj3Sj_nc" version="21.3.2" type="device">
+  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+    <mxGraphModel dx="919" dy="490" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--0" value="BlockManager" style="swimlane;fontStyle=2;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+          <mxGeometry x="20" y="130" width="440" height="470" as="geometry">
+            <mxRectangle x="230" y="140" width="160" height="26" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--1" value="+ rows: int&#xa;+ columns: int&#xa;+ imgWidth: int&#xa;+ imgHeight: int&#xa;- threadsCount: int &#xa;- cutDimension: int&#xa;- values: double*&#xa;- blockSize: int&#xa;- workers: std::thread**&#xa;- dctPlan: fftw_plan&#xa;- idctPlan: fftw_plan&#xa;- dctPlanLastRow: fftw_plan&#xa;- idctPlanLastRow: fftw_plan&#xa;- dctPlanLastColumn: fftw_plan&#xa;- idctPlanLastColumn:fftw_plan&#xa;- dctPlanLastElement: fftw_plan&#xa;- idctPlanLastElement: fftw_plan" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="zkfFHV4jXpPFQw0GAbJ--0" vertex="1">
+          <mxGeometry y="26" width="440" height="244" as="geometry" />
+        </mxCell>
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--4" value="" style="line;html=1;strokeWidth=1;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" parent="zkfFHV4jXpPFQw0GAbJ--0" vertex="1">
+          <mxGeometry y="270" width="440" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--5" value="+ BlockManager(const QImage *image, int blockSize, int cutDimension);&#xa;+ ~BlockManager();&#xa;+ getBlock(int row, int column): double*&#xa;+ setCutDimension(int dimension): void&#xa;+ compress(): QImage*&#xa;+ updateImage(const QImage &amp;image): void&#xa;- getBlockWidth(int i, int j) const: int {query}&#xa;- getBlockHeight(int i, int j) const: int {query}&#xa;- selectDctPlan(int i, int j): fftw_plan&#xa;- selectIdctPlan(int i, int j): fftw_plan&#xa;- cutValues(int row, int column): void&#xa;- parallelTask(const std::function&lt;void(int, int)&gt; &amp;function, bool wait = true): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="zkfFHV4jXpPFQw0GAbJ--0" vertex="1">
+          <mxGeometry y="278" width="440" height="182" as="geometry" />
+        </mxCell>
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--17" value="Address" style="swimlane;fontStyle=0;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;marginBottom=0;rounded=0;shadow=0;strokeWidth=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+          <mxGeometry x="570" y="160" width="240" height="310" as="geometry">
+            <mxRectangle x="550" y="140" width="160" height="26" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--18" value="+ MainWindow(QWidget *parent = nullptr);&#xa;+ ~MainWindow()&#xa;- ui:Ui::MainWindow *&#xa;- qualityFactor: int&#xa;- blockSize: int&#xa;- buffer:QBuffer *&#xa;- image:QImage*&#xa;- imageCompressed: QImage *&#xa;- blockManager: BlockManager *&#xa;- scaleFactor: double&#xa;- horizontalScrollValue: long int&#xa;- verticalScrollValue: long int&#xa;- currentPixmapSize: QSize *&#xa;" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="zkfFHV4jXpPFQw0GAbJ--17" vertex="1">
+          <mxGeometry y="26" width="240" height="194" as="geometry" />
+        </mxCell>
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--23" value="" style="line;html=1;strokeWidth=1;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" parent="zkfFHV4jXpPFQw0GAbJ--17" vertex="1">
+          <mxGeometry y="220" width="240" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="zkfFHV4jXpPFQw0GAbJ--24" value="- resizeEvent(QResizeEvent *event): void&#xa;- startCompression(): void&#xa;- updateMaximalValues(): void&#xa;- updateImageSize(double scaleFactor): void&#xa;- updateScrollBar(): void" style="text;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="zkfFHV4jXpPFQw0GAbJ--17" vertex="1">
+          <mxGeometry y="228" width="240" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="erL4ke3xFkMZlsoqYtWn-7" value="" style="endArrow=open;html=1;endSize=12;startArrow=diamondThin;startSize=14;startFill=0;edgeStyle=orthogonalEdgeStyle;rounded=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="1" y="-51" relative="1" as="geometry">
+            <mxPoint x="460" y="320" as="sourcePoint" />
+            <mxPoint x="570" y="320" as="targetPoint" />
+            <mxPoint x="50" y="-41" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
