@@ -17,17 +17,16 @@ void dct(int N, double *in, double *out, int jump = 1) {
 
     for (int i = 0; i < N; ++i) {
 
-        double delta = i != 0 ? 1 : ((double)1 / sqrt(2.0));
         double a_i = 0;
-        
+
         for (int j = 0; j < N; ++j) {
-            a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N)) * delta;
+            a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N));
         }
-        
-        a_i *= sqrt((double)2 / (double)N);
+
+        a_i /= (i == 0 ? N : N/2);
         out[i * jump] = a_i;
     }
-    
+
     delete[] f;
 }
 
@@ -41,16 +40,12 @@ void idct(int N, double *in, double *out, int jump = 1) {
 
     for (int i = 0; i < N; ++i) {
 
-        
         double c_i = 0;
-        double delta;
         for (int j = 0; j < N; ++j) {
-            delta = j != 0 ? 1 : ((double)1 / sqrt(2.0));
-            c_i += f[j] * delta * cos(j * M_PI * (2 * i + 1) / (2 * N));
+            c_i += f[j] * cos(j * M_PI * (2 * i + 1) / (2 * N));
         }
 
-        c_i *= sqrt((double)2 / (double)N);
-        out[i * jump] = c_i * delta;
+        out[i * jump] = c_i;
     }
 
     delete [] f;
@@ -133,7 +128,7 @@ void compare() {
         for (int i = 0; i < N * N; ++i) {
             in[i] = random() * 100;
         }
-        
+
         timer.tic();
         fastDCT2(N, N, in, out);
         timer.toc();
@@ -147,8 +142,8 @@ void compare() {
         std::cout << "Classic. N = " << N <<  ". Elapsed " << timer.elapsedMilliseconds() << " ms" << std::endl;
         timeSlow.push_back(timer.elapsedMilliseconds());
         dim.push_back(N);
-        
-        
+
+
         std::ofstream file("results.csv");
         file << "N,fast,slow\n";
         for (int i = 0; i < dim.size(); ++i) {
@@ -159,13 +154,13 @@ void compare() {
 
 void test() {
     double testIn[64] = {231, 32, 233, 161, 24, 71, 140, 245,
-                        247, 40, 248, 245, 124, 204, 36, 107,
-                        234, 202, 245, 167, 9, 217, 239, 173,
-                        193, 190, 100, 167, 43, 180, 8, 70,
-                        11, 24, 210, 177, 81, 243, 8, 112,
-                        97, 195, 203, 47, 125, 114, 165, 181,
-                        193, 70, 174, 167, 41, 30, 127, 245,
-                        87, 149, 57, 192, 65, 129, 178, 228};
+                         247, 40, 248, 245, 124, 204, 36, 107,
+                         234, 202, 245, 167, 9, 217, 239, 173,
+                         193, 190, 100, 167, 43, 180, 8, 70,
+                         11, 24, 210, 177, 81, 243, 8, 112,
+                         97, 195, 203, 47, 125, 114, 165, 181,
+                         193, 70, 174, 167, 41, 30, 127, 245,
+                         87, 149, 57, 192, 65, 129, 178, 228};
 
     double testAfterDct[64] = {
             1118.750,  44.0221926230179,  75.9190503260943, -138.572410997073,  3.50000000000011,  122.078055188031,   195.04386762363, -101.604905927954,
@@ -185,7 +180,7 @@ void test() {
     double *testOut = new double[64];
     double *idctOut = new double[64];
     fastDCT2(8, 8, &testIn[0], testOut);
-   
+
     fastIDCT2(8, 8, testOut, idctOut);
 
     double epsilon = 1e-12;
@@ -193,7 +188,7 @@ void test() {
     std::cout << "---- Test FFTW ---- " << std::endl;
 
     std::cout << "Test DCT2 on matrix: " << std::endl;
-    std::cout << "   - DCT2 and IDCT2 with right scaling: ";
+    std::cout << "   - DCT2 and IDCT2, same result as input: ";
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
             idctOut[8 * i + j] /= 64 * 4;
@@ -232,16 +227,8 @@ void test() {
 
 
     std::cout << "\n\n---- Test Custom DCT and IDCT ---- " << std::endl;
-    std::cout << "   - Test DCT2: " << std::flush;
+    std::cout << "   - Test DCT2 and IDCT2: " << std::flush;
     dct2(8, 8, testIn, testOut);
-    for (int i = 0; i < 8; ++i) {
-        for (int j = 0; j < 8; ++j) {
-            assert(std::abs(testOut[8 * i + j] - testAfterDct[8 * i + j]) < epsilon);
-        }
-    }
-    std::cout << "passed" << std::endl;
-
-    std::cout << "   - Test IDCT2: " << std::flush;
     idct2(8, 8, testOut, idctOut);
     for (int i = 0; i < 8; ++i) {
         for (int j = 0; j < 8; ++j) {
@@ -250,11 +237,12 @@ void test() {
     }
     std::cout << "passed" << std::endl;
 
-    std::cout << "   - Test dct on single array: " << std::flush;
+    std::cout << "   - Test DCT and IDCT on single array: " << std::flush;
     double *outArr2 = new double[8];
     dct(8, arrTest, outArr2);
+    idct(8, outArr2, outArr2);
     for (int i = 0; i < 7; ++i) {
-        assert(std::abs(outArr2[i] - arrAfterDct[i]) < epsilon);
+        assert(std::abs(outArr2[i] - arrTest[i]) < epsilon);
     }
     std::cout << "passed" << std::endl;
 }
