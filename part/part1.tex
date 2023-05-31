@@ -35,6 +35,7 @@ Il codice implementato per eseguire la DCT é il seguente:
 				a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N));
 			}
 			
+			a_i /= (i == 0 ? N : N/2);
 			out[i * jump] = a_i;
 		}
 		
