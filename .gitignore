@@ -77,3 +77,8 @@ custom_implementation/build
 
 
 *.csv
+
+
+cmake-build-release/
+cmake-build-debug
+.idea/

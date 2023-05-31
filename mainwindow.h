@@ -38,9 +38,6 @@ private slots:
 
     void on_verticalScrollBar_valueChanged(int value);
 
-signals:
-    void finishCompression();
-
 private:
     Ui::MainWindow *ui;
     int qualityFactor;
@@ -52,6 +49,7 @@ private:
     double scaleFactor;
     long int horizontalScrollValue;
     long int verticalScrollValue;
+    QSize *currentPixmapSize;
 
     void resizeEvent(QResizeEvent *event);
     void startCompression();

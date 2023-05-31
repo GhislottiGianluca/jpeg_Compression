@@ -28,15 +28,14 @@ MainWindow::MainWindow(QWidget *parent)
     imageCompressed(nullptr),
     blockSize(10),
     blockManager(nullptr),
-    scaleFactor(1)
+    scaleFactor(1),
+    currentPixmapSize(nullptr)
 {
     ui->setupUi(this);
     findChild<QPushButton*>("zoomIn")->setIcon(QIcon(":/icons/zoomIn.png"));
     findChild<QPushButton*>("zoomOut")->setIcon(QIcon(":/icons/zoomOut.png"));
     findChild<QLabel*>("labelQualityValue")->setAlignment(Qt::AlignCenter);
     updateMaximalValues();
-
-    connect(this, SIGNAL(finishCompression()), this, SLOT(onCompressionFinished()));
 
     QScrollBar *horizontalScroll = findChild<QScrollBar*>("horizontalScrollBar");
     QScrollBar *verticalScroll = findChild<QScrollBar*>("verticalScrollBar");
@@ -84,8 +83,10 @@ void MainWindow::on_loadButton_clicked() {
 
         if (image == nullptr) {
             image = new QImage(bitmap.toImage());
+            currentPixmapSize = new QSize(bitmap.size());
         } else {
             *image = bitmap.toImage();
+            *currentPixmapSize = bitmap.size();
         }
 
         findChild<QLabel*>("labelOriginalTitle")->setText("<h3>Original (" + QString::number(size / 1000.0) +  " KB)</h3>");
@@ -122,7 +123,7 @@ void MainWindow::startCompression(){
     imageCompressed = blockManager->compress();
     delete oldImage;
 
-    emit finishCompression();
+    onCompressionFinished();
 }
 
 void MainWindow::updateScrollBar() {
@@ -134,11 +135,6 @@ void MainWindow::updateScrollBar() {
 
     scrollOriginal->verticalScrollBar()->setValue(verticalScrollValue);
     scrollOriginal->horizontalScrollBar()->setValue(horizontalScrollValue);
-
-    //QScrollBar *verticalScrollbar = findChild<QScrollBar*>("verticalScrollBar");
-    //QScrollBar *horizontalScrollbar = findChild<QScrollBar*>("horizontalScrollBar");
-    //verticalScrollbar->setValue(verticalScrollValue);
-    //horizontalScrollbar->setValue(horizontalScrollValue);
 }
 
 void MainWindow::on_sliderQuality_valueChanged(int value) {
@@ -209,15 +205,17 @@ void MainWindow::on_zoomOut_clicked()
 
 void MainWindow::updateImageSize(double scaleFactor){
     QLabel *originalImageLabel = findChild<QLabel*>("originalImage");
+    QSize *scaledImageSize = nullptr;
     if(originalImageLabel != nullptr){
+        scaledImageSize = new QSize(image->size() * scaleFactor);
         originalImageLabel->setPixmap(QPixmap::fromImage(image->scaled(image->width() * scaleFactor, image->height() * scaleFactor)));
-        originalImageLabel->resize(originalImageLabel->pixmap().size());
+        originalImageLabel->resize(*scaledImageSize);
     }
 
     QLabel *compressedImageLabel = findChild<QLabel*>("compressedImage");
-    if(compressedImageLabel != nullptr){
+    if(compressedImageLabel != nullptr && scaledImageSize != nullptr){
         compressedImageLabel->setPixmap(QPixmap::fromImage(imageCompressed->scaled(imageCompressed->width() * scaleFactor, imageCompressed->height() * scaleFactor)));
-        compressedImageLabel->resize(compressedImageLabel->pixmap().size());
+        compressedImageLabel->resize(*scaledImageSize);
     }
 
     updateMaximalValues();
