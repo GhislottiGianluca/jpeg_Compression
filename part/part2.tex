@@ -17,17 +17,25 @@ Alla versione base del progetto, descritto precedentemente, sono state aggiunte 
 
 \begin{itemize}
 	\item \textbf{Multithreading}: L'aggiunta dei thread permette una rapida compressione dell'immagine. Infatti essendo che i blocchi lavorano su aree della figura indipendenti gli uni dagli altri, è possibile eseguire le compressioni in parallelo, così come la scrittura dei pixel nell'oggetto immagine finale.
+	
+	Abbiamo fatto in modo che i blocchi vengano suddivisi in una griglia la cui quantità di celle di celle corrisponde al numero di core del sistema. In questo modo, il carico di lavoro può essere distribuito in modo equo tra i processori e minimizzare il tempo di esecuzione della compressione.
 	\item \textbf{Navigazione dell'immagine}: All'interno dell'interfaccia grafica sono presenti degli slider e dei tasti per zoomare nelle immagine, tali tasti sono sincronizzati in modo tale da poter visionare contemporaneamente le stesse zone delle 2 immagini. In questo modo si possono osservare più comodamente i vari effetti che la compressione comporta sulle immagini.
 	\item \textbf{Aggiornamento in tempo reale}: Grazie ai thread, che velocizzano notevolmente il lavoro, modificando la dimensioni dei blocchi e/o la dimensione del taglio delle frequenze, é possibile visionare nella parte di destra gli aggiornamenti sulla compressione, in tempo reale. Il delay che intercorre tra la modifica del parametro e il suo aggiornamento é solitamente molto basso, anche se ovviamente varia in relazione alla dimensione dell'immagine passata in input.
-	\item  \textbf{Gestione dei bordi}: Usando blocchi di grandezza variabile, un blocco che si trova sul bordo dell'immagine può includere eventuali pixel esterni, se presenti, in questo modo non si perde informazione sulla risoluzione originale dell'immagine.
+	\item  \textbf{Gestione dei bordi}:  A fini sperimentali, abbiamo provato ad implementare il processo di compressione in modo che venga effettuata la dct anche su blocchi più piccoli sui bordi dell'immagine, in modo da ricoprirne l'intera superficie.
 \end{itemize}
 
-\section{Dettagli implementativi}
+\section{Gestione dei pixel in eccesso}
 
-Solitamente é difficile che la dimensione di un blocco sia esattamente un multiplo della risoluzione dell'immagine, per questo motivo i blocchi sui bordi possono avere una dimensione variabile, che gli consente di includere eventuali pixel che verrebbero esclusi.
+All'interno di questo progetto, abbiamo deciso in modo "sperimentale" di gestire in maniera leggermente diversa da jpeg i pixel sui margini.
 
-Questo, anche se non richiesto dalla consegna, ha necessitato la modifica del valore relativo al taglio delle frequenze, per fare in modo che i blocchi definiti sui bordi, gestiscano il taglio delle frequenze su dimensioni rettangolari. In particolare in Figura \ref{fig:taglio} viene mostrato come il taglio di un blocco rettangolare per lo stesso numero, comporta una perdita maggiore di informazioni. Per tale motivo, il valore di qualità per tali blocchi è stato moltiplicato per: \[ dimMassima / blockSize \] dove la \textit{dimMassima} rappresenta il lato più lungo del rettangolo (b in Figura). In questo modo si ottiene il rapporto per scalare correttamente il taglio da una forma quadrata ad una rettangolare.
+Nello specifico, il nostro programma di compressione crea dei piccoli blocchi in modo da riempire completamente tutta l'immagine e ne esegue la DCT2. Prima di eseguire il taglio, però, il valore del taglio viene adattato in modo da essere proporzionato alla minore quantità di frequenze e da rendere, quindi, la compressione dell'immagine più uniforme:
 
+$$d' = d  \sqrt{ \frac{W \cdot H}{F^{2}}}$$
+
+dove W e H rappresentano rispettivamente la larghezza e l'altezza del blocco preso in considerazione.
+Inoltre, nel caso in cui $d'=0$, ma $d>0$, si mantiene il valore originale al fine di evitare buchi indesiderati.
+
+Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vincolati dalla matrice di quantizzazione e abbiamo potuto, quindi, sperimentare una gestione leggermente diversa del margine dell'immagine.
 
 
 \begin{figure}

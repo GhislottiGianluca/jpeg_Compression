@@ -18,28 +18,29 @@ L'implementazione effettiva risale al '97, nonostante ciò gode di particolare p
 Il codice implementato per eseguire la DCT é il seguente:
 
 
-\begin{lstlisting}[gobble=1]
-	void dct(int N, double *in, double *out, int jump = 1) {
-		
-		double *f = new double[N];
-		
-		for (int i = 0; i < N; ++i) {
-			f[i] = in[i * jump];
-		}
-		
-		for (int i = 0; i < N; ++i) {
-			
-			double a_i = 0;
-			
-			for (int j = 0; j < N; ++j) {
-				a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N));
-			}
-			
-			out[i * jump] = a_i;
-		}
-		
-		delete[] f;
+\begin{lstlisting}
+void dct(int N, double *in, double *out, int jump = 1) {
+	
+	double *f = new double[N];
+	
+	for (int i = 0; i < N; ++i) {
+		f[i] = in[i * jump];
 	}
+	
+	for (int i = 0; i < N; ++i) {
+		
+		double a_i = 0;
+		
+		for (int j = 0; j < N; ++j) {
+			a_i +=  f[j] * cos(i * M_PI * (2 * j + 1) / (2 * N));
+		}
+		
+		a_i /= (i == 0 ? N : N/2);
+		out[i * jump] = a_i;
+	}
+	
+	delete[] f;
+}
 \end{lstlisting}
 
 Siccome l'applicazione di 2 dct genera la DCT2, di seguito si trova la sua implementazione:
