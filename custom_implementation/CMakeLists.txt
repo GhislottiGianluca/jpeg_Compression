@@ -15,14 +15,11 @@ ExternalProject_Add(project_fftw
         INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/fftw/install
         )
 
-add_library(fftw STATIC IMPORTED)
-set(lib_fftw_name ${CMAKE_STATIC_LIBRARY_PREFIX}fftw3${CMAKE_STATIC_LIBRARY_SUFFIX})
-set_target_properties(fftw PROPERTIES IMPORTED_LOCATION
-        ${CMAKE_CURRENT_BINARY_DIR}/fftw/install/lib/${lib_fftw_name})
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/fftw/install/include)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/fftw/install/lib)
 
 add_executable(custom main.cpp timer.cpp)
 add_dependencies(custom project_fftw)
 
-TARGET_LINK_LIBRARIES(custom fftw)
+TARGET_LINK_LIBRARIES(custom fftw3)
