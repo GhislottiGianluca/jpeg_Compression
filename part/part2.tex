@@ -104,9 +104,9 @@ Per mostrare meglio la compressione potremmo momentaneamente ignorare la convers
 
 \subsection{Fenomeno di Gibbs}
 
-Scegliendo un'elevata dimensione dei blocchi si ottiene comunque il fenomeno di Gibbs, visibile chiaramente in Figura \ref{fig:gibbs}. Dove l'elevato contrasto tra il muso del cervo e il relativo sfondo, generano un repentino cambio di colore, il quale genera degli artefatti, sotto foma di onde nell'immagine finale.
+Scegliendo un'elevata dimensione dei blocchi si ottiene comunque il fenomeno di Gibbs, visibile chiaramente in Figura \ref{fig:gibbs}. Dove l'elevato contrasto tra il muso del cervo e il relativo sfondo, generano un repentino cambio di colore, il quale genera degli artefatti sotto foma di onde nell'immagine finale.
 
-Per rappresentare meglio il fenomeno, nel grafico di Figura \ref{fig:dct_values_on_gibbs} sono stati rappresentati i coefficienti della dct relativi al blocco precedentemente illustrato, che presenta tale fenomeno. Nell'istogramma si può osservare come le basse frequenze presentano un elevato valore, nonostante ciò, i restanti coefficienti non sono completamente discendenti mentre ci si allontana dal punto (0, 0), ma invece troviamo valori anche per le frequenze più elevato. Dopo il taglio dei coefficienti relativi a frequenze elevate, perdiamo l'informazione che permette di contrastare gli artefatti generati nell'immagine finale.
+Per rappresentare meglio il fenomeno, nel grafico di Figura \ref{fig:dct_values_on_gibbs} sono stati rappresentati i coefficienti della dct relativi al blocco precedentemente illustrato, che presenta tale fenomeno. Nell'istogramma si può osservare come le basse frequenze presentano un elevato valore, nonostante ciò, i restanti coefficienti non sono completamente discendenti mentre ci si allontana dal punto (0, 0), ma invece troviamo valori che non sono tendenti allo 0 anche per le frequenze più elevate. Infine, quindi, dopo il taglio dei coefficienti relativi a frequenze elevate, perdiamo l'informazione che permette di contrastare gli artefatti generati nell'immagine finale.
 
 \begin{figure}[h]
 	\centering
