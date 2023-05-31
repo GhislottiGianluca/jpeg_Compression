@@ -36,13 +36,9 @@ ExternalProject_Add(project_fftw
         INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/fftw/install
         )
 
-add_library(fftw STATIC IMPORTED)
-set(lib_fftw_name ${CMAKE_STATIC_LIBRARY_PREFIX}fftw3${CMAKE_STATIC_LIBRARY_SUFFIX})
-set_target_properties(fftw PROPERTIES IMPORTED_LOCATION
-        ${CMAKE_CURRENT_BINARY_DIR}/fftw/install/lib/${lib_fftw_name})
-
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/fftw/install/include)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/fftw/install/lib)
 
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -68,8 +64,9 @@ else()
     endif()
 endif()
 
-target_link_libraries(jpeg_compression PRIVATE Qt${QT_VERSION_MAJOR}::Widgets fftw)
 add_dependencies(jpeg_compression project_fftw)
+target_link_libraries(jpeg_compression PRIVATE Qt${QT_VERSION_MAJOR}::Widgets fftw3)
+
 
 set_target_properties(jpeg_compression PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
