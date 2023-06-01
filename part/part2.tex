@@ -1,6 +1,6 @@
 \part{Progettazione di un'interfaccia grafica per la compressione di immagini}
 
-L'interfaccia grafica è realizzata con l'ambiente di sviluppo Qt\cite{qt}, il quale permette di creare delle GUI scrivendo il codice in linguaggio C++. La compressione applicata è stata limitata solamente alla visualizzazione, ovvero l'immagine perde l'informazione legata alle alte frequenze, però le strutture dati che contengono tale immagine rimangono costanti. Introducendo la possibilità, ad un successivo salvataggio dell'immagine, di memorizzare solamente i coefficienti diversi da 0, richiamando un concetto di simil sparsità però applicato alle frequenze non tagliate dalla compressione.
+L'interfaccia grafica è realizzata con l'ambiente di sviluppo Qt\cite{qt}, il quale permette di creare delle GUI scrivendo il codice in linguaggio C++. La compressione applicata è stata limitata solamente alla visualizzazione, ovvero l'immagine perde l'informazione legata alle alte frequenze, però le strutture dati che contengono tale immagine rimangono costanti. Introducendo la possibilità, ad un successivo salvataggio dell'immagine, di memorizzare solamente i coefficienti diversi da 0, richiamando un concetto di simil sparsità però applicato alle frequenze non tagliate dalla compressione. Infatti si potrebbero memorizzare i valori seguendo l'ordine diagonale di taglio e altre informazioni utili, quali: la dimensione dell'immagine, la grandezza dei blocchi e il valore di taglio.
 
 Il programma fornisce una schermata nella quale è possibile selezionare l'immagine da comprimere e i valori di compressione da applicare, ossia dimensione dei blocchi e la soglia di taglio delle frequenze. Nella parte sinistra della GUI viene mostrata l'immagine originale, mentre in quella di destra la sua versione compressa. In figura\ref{fig:deer} è riportato un esempio sull'immagine \textit{deer}, sulla quale sono stati applicati blocchi di elevate dimensioni (70x70) ed una elevata compressione (circa del 92\%), in questo modo è facilmente osservabile l'effetto della compressione sui blocchi e sull'immagine.
 
@@ -9,6 +9,15 @@ Il programma fornisce una schermata nella quale è possibile selezionare l'immag
 	\includegraphics[width=1\linewidth]{figures/qt_deer}
 	\caption{Programma di compressione basato su Qt}
 	\label{fig:deer}
+\end{figure}
+
+Il diagramma delle classi relativo a questo progetto è molto breve, infatti sono state create solamente 2 classi. La prima per gestire l'interfaccia grafica, chiamata \textit{MainWindow}, mentre la seconda, \textit{BlockManager}, si occupa della gestione dei blocchi e la loro relativa compressione. Questo diagramma viene mostrato in Figura \ref{fig:class_diagram}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\linewidth]{figures/class diagram}
+	\caption{Diagramma delle classi}
+	\label{fig:class_diagram}
 \end{figure}
 
 \section{Features}
