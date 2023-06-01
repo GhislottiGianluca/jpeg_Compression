@@ -98,10 +98,10 @@ void BlockManager::cutValues(int row, int column) {
     int blockWidth = getBlockWidth(row, column);
     int blockHeight = getBlockHeight(row, column);
 
-    int adjustedD = sqrt((double)(cutDimension * cutDimension) * ((double)(blockWidth * blockHeight) / (double)(blockSize * blockSize)));
+    int adjustedD = cutDimension * sqrt(((double)(blockWidth * blockHeight) / (double)(blockSize * blockSize)));
 
     if (adjustedD == 0 && cutDimension > 0) {
-        adjustedD = cutDimension;
+        adjustedD = 1;
     }
 
     int rowLimit = adjustedD - blockHeight;
