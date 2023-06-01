@@ -9,13 +9,13 @@ L'implementazione "fatta in casa" della DCT2 e dell'analoga IDCT2 è stata imple
 
 \section{Informazioni sulla libreria}
 
-La libreria scelta, come accennato precedentemente, è la FFTw, il cui nome è l'abbreviativo di \textit{Fast Fourier Transform in the West}. Infatti si dichiara essere una delle implementazioni più veloci della Fast Fourier Transform. Tali risultati sono stati raggiunti grazie ad un ottimizzazione particolare degli algoritmi, che sfruttano alcune istruzioni specifiche dei vari processori ottimizzate per la risoluzione numerica.
+La libreria scelta, come accennato precedentemente, è la FFTw, il cui nome è l'abbreviativo di \textit{Fast Fourier Transform in the West}. Infatti si dichiara essere una delle implementazioni più veloci della Fastest Fourier Transform. Tali risultati sono stati raggiunti grazie ad un ottimizzazione particolare degli algoritmi, che sfruttano alcune istruzioni specifiche dei vari processori ottimizzate per la risoluzione numerica.
 
 L'implementazione effettiva risale al '97, nonostante ciò gode di particolare popolarità su Github\cite{Github} e ha vinto numerosi premi, tra cui il \textit{1999 J.H Wilkinson Prize for Numerical Software}, il quale viene conferito, una volta sola ogni 4 anni, al software che "best addresses all phases of the preparation of high quality numerical software", ovvero al programma che meglio copre tutte le fasi di un software numerico. Inoltre il paper correlato alla libreria "A Fast Fourier Transform Compiler"\cite{fftw_paper} ha ricevuto il premio di "Most Influential PLDI Paper" nel 2009, con un totale di circa 2000 download e 400 citazioni.
 
-\section{Codice}
+\section{Implementazione custom}
 
-Il codice implementato per eseguire la DCT é il seguente:
+Il codice implementato per eseguire la DCT, secondo la definizione de coeffiicienti vista a lezione, è il seguente:
 
 
 \begin{lstlisting}[gobble=1]
@@ -40,7 +40,8 @@ Il codice implementato per eseguire la DCT é il seguente:
 		}
 		
 		delete[] f;
-}
+	}
+
 \end{lstlisting}
 
 Siccome l'applicazione di 2 dct genera la DCT2, di seguito si trova la sua implementazione:
@@ -63,9 +64,11 @@ Siccome l'applicazione di 2 dct genera la DCT2, di seguito si trova la sua imple
 	}
 \end{lstlisting}
 
-Le matrici passate in input vengono memorizzate in modalità row major, in questo modo è sufficiente usare l'allocazione di un singolo vettore per contenere tutte le celle della matrice. Infatti per tale motivo è stato aggiunto il parametro \textit{jump} che permette di saltare da una riga alla successiva, in questo modo si può iterare sulle colonne mantenendo la DCT universale.
+Il codice della DCT prende in input il puntatore alla matrice di output per fare in modo che la DCT2 possa eseguire due DCT in place, ovvero scrivendo due volte sulla stessa matrice evitando ulteriori allocazioni di memoria.
 
+Per evitare il calcolo del prodotto scalare delle basi con sè stesse, inoltre, abbiamo controllato direttamente l'indice della frequenza: se questo è 0, allora il prodotto scalare sarà N, altrimenti corrisponderà sempre a $\frac{N}{2}$.
 
+Inoltre, è presente un parametro \textit{jump}, che fa in modo che la DCT salti di un certo numero di celle di memoria per passare da una componente alla successiva: la sua utilità viene nel momento in cui viene chiamata la DCT sulle colonne: la matrice è organizzata in modalità row major, per cui, per eseguire la dct in place sulle colonne, è necessario dire alla DCT di saltare di M celle per passare alla componente successiva del vettore "logico", dove M rappresenta il numero di colonne della matrice.
 
 \section{Test}
 
