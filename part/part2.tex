@@ -112,9 +112,11 @@ Per mostrare meglio la compressione potremmo momentaneamente ignorare la convers
 
 \subsection{Fenomeno di Gibbs}
 
-Scegliendo un'elevata dimensione dei blocchi si ottiene comunque il fenomeno di Gibbs, visibile chiaramente in Figura \ref{fig:gibbs}. Dove l'elevato contrasto tra il muso del cervo e il relativo sfondo, generano un repentino cambio di colore, il quale genera degli artefatti sotto foma di onde nell'immagine finale.
+Scegliendo un'elevata dimensione dei blocchi si ottiene comunque il fenomeno di Gibbs, visibile chiaramente in Figura \ref{fig:gibbs}. Dove l'elevato contrasto tra il muso del cervo e il relativo sfondo, generano un repentino cambio di colore, il quale comporta l'apparizione degli artefatti sotto forma di onde nell'immagine finale.
 
-Per rappresentare meglio il fenomeno, nel grafico di Figura \ref{fig:dct_values_on_gibbs} sono stati rappresentati i coefficienti della dct relativi al blocco precedentemente illustrato, che presenta tale fenomeno. Nell'istogramma si può osservare come le basse frequenze presentano un elevato valore, nonostante ciò, i restanti coefficienti non sono completamente discendenti mentre ci si allontana dal punto (0, 0), ma invece troviamo valori che non sono tendenti allo 0 anche per le frequenze più elevate. Infine, quindi, dopo il taglio dei coefficienti relativi a frequenze elevate, perdiamo l'informazione che permette di contrastare gli artefatti generati nell'immagine finale.
+Per rappresentare meglio il fenomeno, nel grafico di Figura \ref{fig:dct_values_on_gibbs} sono stati rappresentati i coefficienti della DCT relativi al blocco precedentemente illustrato, che presenta tale fenomeno. Per una migliore visualizzazione, la scala è stata ristretta, in questo modo non è possibile osservare la totalità del peso delle basse frequenze, ma in compenso si osserva meglio la distribuzione dei coefficienti su tutte le restanti frequenze.
+
+Nell'istogramma le basse frequenze hanno valori nell'ordine di \path{1e+6}, mentre allontanandosi troviamo coefficienti che sono in proporzione molto più piccoli (nell'ordine delle migliaia), visibili in Figura \ref{fig:last_dct_values_gibbs}. Tali valori però sono fondamentali nella corretta rappresentazione dell'immagine, infatti essi riescono a modellare il repentino cambio di colore presente nel blocco analizzato. Quindi nel momento in cui essi vengono tagliati dalla compressione, si ottiene il fenomeno illustrato precedentemente in Figura \ref{fig:gibbs}
 
 \begin{figure}[h]
 	\centering
@@ -123,9 +125,18 @@ Per rappresentare meglio il fenomeno, nel grafico di Figura \ref{fig:dct_values_
 	\label{fig:gibbs}
 \end{figure}
 
-\begin{figure}[h]
+
+\begin{figure}
 	\centering
 	\includegraphics[width=1\linewidth]{figures/dct_values_3d.eps}
-	\caption{Valori della DCT}
+	\caption{Coefficienti DCT nel blocco mostrato in Figura \ref{fig:gibbs}}
 	\label{fig:dct_values_on_gibbs}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1\linewidth]{figures/last_dct_values.eps}
+
+	\caption{Ultimi 50 x 50 coefficienti della DCT relativi alla Figura \ref{fig:dct_values_on_gibbs}}
+	\label{fig:last_dct_values_gibbs}
 \end{figure}
