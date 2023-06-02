@@ -9,4 +9,4 @@ main.pdf
 *.synctex*
 *.bbl
 *.blg
-
+*converted-to.pdf

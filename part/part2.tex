@@ -27,17 +27,18 @@ Alla versione base del progetto, descritto precedentemente, sono state aggiunte 
 \begin{itemize}
 	\item \textbf{Multithreading}: L'aggiunta dei thread permette una rapida compressione dell'immagine. Infatti essendo che i blocchi lavorano su aree della figura indipendenti gli uni dagli altri, è possibile eseguire le compressioni in parallelo, così come la scrittura dei pixel nell'oggetto immagine finale.
 	
-	Abbiamo fatto in modo che i blocchi vengano suddivisi in una griglia la cui quantità di celle di celle corrisponde al numero di core del sistema. In questo modo, il carico di lavoro può essere distribuito in modo equo tra i processori e minimizzare il tempo di esecuzione della compressione.
-	\item \textbf{Navigazione dell'immagine}: All'interno dell'interfaccia grafica sono presenti degli slider e dei tasti per zoomare nelle immagine, tali tasti sono sincronizzati in modo tale da poter visionare contemporaneamente le stesse zone delle 2 immagini. In questo modo si possono osservare più comodamente i vari effetti che la compressione comporta sulle immagini.
+	Abbiamo fatto in modo che l'immagine venisse suddivisa in macroblocchi disgiunti tra loro, ognuno contenente un insieme di blocchi $F \times F$ dell'immagine. La cardinalità di questo insieme di macroblocchi è pari circa al numero di core/thread del processore su cui verrà eseguito il nostro programma di compressione. In questo modo, è possibile bilanciare il livello di parallelismo sulla base delle capacità della macchina di parallelizzare i task.
+	\item \textbf{Navigazione dell'immagine}: All'interno dell'interfaccia grafica sono presenti degli slider e dei tasti per zoomare nelle immagine. Questi tasti sono sincronizzati in modo tale da poter visionare contemporaneamente le stesse zone delle 2 immagini. In questo modo si possono osservare più comodamente i vari effetti che la compressione comporta sulle immagini.
 	\item \textbf{Aggiornamento in tempo reale}: Abbiamo costruito l'interfaccia grafica in modo che l'utente possa regolare e visualizzare in tempo reale la compressione dell'immagine, anche su zone particolari (ad esempio, dopo uno zoom). Grazie al parallelismo, inoltre, siamo riusciti a migliorare la latenza di questa operazione.
-	\item  \textbf{Gestione dei bordi}:  A fini sperimentali, abbiamo provato ad implementare il processo di compressione in modo che venga effettuata la dct anche su blocchi più piccoli sui bordi dell'immagine, in modo da ricoprirne l'intera superficie.
-\end{itemize}
+	\item  \textbf{Gestione dei bordi}:  A fini sperimentali, abbiamo provato ad implementare il processo di compressione in modo che venisse effettuata la DCT anche su blocchi di dimensioni inferiori, composti dagli scarti derivati dalla suddivisione in blocchi di dimensione $ F \times F$. Ulteriori informazioni su questa prova sono presenti alla Sezione \ref{sec:border}.
+	
+	\end{itemize}
 
-\section{Gestione dei pixel in eccesso}
+\section{Gestione dei pixel in eccesso}\label{sec:border}
 
 All'interno di questo progetto, abbiamo deciso in modo "sperimentale" di gestire in maniera leggermente diversa da jpeg i pixel sui margini.
 
-Nello specifico, il nostro programma di compressione considera i pixel in eccesso derivati dalla suddivisione in blocchi e li utilizza per creare dei blocchi più piccoli, al fine di riempire l'intera immagine. Dopo questa operazione, ne esegue la DCT2 allo stesso modo degli altri blocchi. Prima di eseguire il taglio, però, il valore del taglio viene adattato in modo da essere proporzionato alla minore quantità di frequenze e da rendere, quindi, la compressione dell'immagine più uniforme:
+Nello specifico, il nostro programma di compressione considera i pixel in eccesso derivati dalla suddivisione in blocchi e li utilizza per creare dei blocchi più piccoli, al fine di riempire l'intera immagine. Dopo questa operazione, ne esegue la DCT2 allo stesso modo degli altri blocchi. Prima di eseguire il taglio, però, la soglia di azzeramento delle frequenze viene adattata in modo da essere proporzionato alla minore quantità di frequenze e da rendere, quindi, la compressione dell'immagine più uniforme:
 
 $$d' = \floor*{d  \sqrt{ \frac{W \cdot H}{F^{2}}}}$$
 
@@ -110,22 +111,20 @@ Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vi
 
 \section{Visualizzazione dei risultati}
 
-Per mostrare meglio la compressione potremmo momentaneamente ignorare la conversione dei valori tramite la IDCT2. In figura\ref{fig:compression_values} viene mostrato il risultato ottenuto, dove è possibile osservare i coefficienti generati dalla DCT, i quali vengono successivamente tagliati per il valore di input scelto. In questo modo, ogni blocco conterrà dati diversi da 0 solo nella parte superiore del taglio, evidenziata anche graficamente dalla distribuzione del colore bianco nei singoli blocchi. Infatti tale tonalità rappresenta un valore elevato del coefficiente presente nella matrice, mentre le zone nere, rappresentano i valori che sono stati impostati a 0 dal taglio.
+Per mostrare meglio la compressione potremmo momentaneamente ignorare la conversione dei valori tramite la IDCT2. In figura\ref{fig:compression_values} viene mostrato il risultato ottenuto, dove è possibile osservare i coefficienti generati dalla DCT, i quali vengono successivamente tagliati per il valore di input scelto. In questo modo, ogni blocco conterrà dati diversi da 0 solo nella parte superiore del taglio, evidenziata anche graficamente dalla distribuzione del colore bianco nei singoli blocchi. Infatti tale tonalità rappresenta un valore elevato del coefficiente presente nella matrice, mentre le zone nere, rappresentano i valori che sono stati impostati a 0 dal taglio. Al fine di rendere migliore la visualizzazione, è stato temporaneamente modificato lo scaling delle DCT.
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=1\linewidth]{figures/qt_dct_values}
-	\caption{Valori della DCT generati dalla compressione (a meno dello scaling)}
+	\caption{Valori della DCT generati dalla compressione (a meno dello scaling). Si noti il taglio netto delle frequenze determinato dalla soglia $d$.}
 	\label{fig:compression_values}
 \end{figure}
 
 \subsection{Fenomeno di Gibbs}
 
-Scegliendo un'elevata dimensione dei blocchi si ottiene comunque il fenomeno di Gibbs, visibile chiaramente in Figura \ref{fig:gibbs}. Dove l'elevato contrasto tra il muso del cervo e il relativo sfondo, generano un repentino cambio di colore, il quale comporta l'apparizione degli artefatti sotto forma di onde nell'immagine finale.
+Scegliendo un'elevata dimensione dei blocchi si rende particolarmente visibile il fenomeno di Gibbs, mostrato in Figura \ref{fig:gibbs}. La sua presenza tende ad essere più fastidiosa con blocchi grandi perché è più probabile che, all'aumentare di $F$, aumenta lo spazio all'interno del quale le basse frequenze cercano di compensare la carenza di quelle alte per rappresentare i cambiamenti repentini del tono di grigio presenti nel blocco stesso.
 
-Per rappresentare meglio il fenomeno, nel grafico di Figura \ref{fig:dct_values_on_gibbs} sono stati rappresentati i coefficienti della DCT relativi al blocco precedentemente illustrato, che presenta tale fenomeno. Per una migliore visualizzazione, la scala è stata ristretta, in questo modo non è possibile osservare la totalità del peso delle basse frequenze, ma in compenso si osserva meglio la distribuzione dei coefficienti su tutte le restanti frequenze.
-
-Nell'istogramma le basse frequenze hanno valori nell'ordine di \path{1e+6}, mentre allontanandosi troviamo coefficienti che sono in proporzione molto più piccoli (nell'ordine delle migliaia), visibili in Figura \ref{fig:last_dct_values_gibbs}. Tali valori però sono fondamentali nella corretta rappresentazione dell'immagine, infatti essi riescono a modellare il repentino cambio di colore presente nel blocco analizzato. Quindi nel momento in cui essi vengono tagliati dalla compressione, si ottiene il fenomeno illustrato precedentemente in Figura \ref{fig:gibbs}
+Nelle Figure \ref{fig:dct_values_on_gibbs} e \ref{fig:last_dct_values_gibbs} sono rappresentati rispettivamente l'intero istogramma del blocco mostrato in Figura \ref{fig:gibbs} e un suo zoom sulle ultime $50 \times 50$ frequenze. Nonostante la presenza di basse frequenze sia decisamente maggiore di quella delle alte frequenze, sono proprio quest'ultime che sono in grado di rappresentare al meglio i dettagli e, quindi, anche il bordo superiore della testa del cervo. Al momento del taglio, con un valore di $d$ basso, queste spariscono del tutto e non è, quindi, più possibile mostrare il cambiamento netto dell'immagine originale.
 
 \begin{figure}[h]
 	\centering
