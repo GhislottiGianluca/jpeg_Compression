@@ -126,11 +126,20 @@ Scegliendo un'elevata dimensione dei blocchi si rende particolarmente visibile i
 
 Nelle Figure \ref{fig:dct_values_on_gibbs} e \ref{fig:last_dct_values_gibbs} sono rappresentati rispettivamente l'intero istogramma del blocco mostrato in Figura \ref{fig:gibbs} e un suo zoom sulle ultime $50 \times 50$ frequenze. Nonostante la presenza di basse frequenze sia decisamente maggiore di quella delle alte frequenze, sono proprio quest'ultime che sono in grado di rappresentare al meglio i dettagli e, quindi, anche il bordo superiore della testa del cervo. Al momento del taglio, con un valore di $d$ basso, queste spariscono del tutto e non è, quindi, più possibile mostrare il cambiamento netto dell'immagine originale.
 
+In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenuta dei blocchi (in questo caso, $8 \times 8$), sia sufficiente al fine di limitare il fenomeno a piccolissime aree dell'immagine, rendendolo quasi impercettibile.
+
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=1\linewidth]{figures/gibbs_phenomenon}
 	\caption{Fenomeno di Gibbs su un blocco}
 	\label{fig:gibbs}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=1\linewidth]{figures/gibbs_small}
+	\caption{Mitigazione del fenomeno di Gibbs sull'area dell'immagine mostrata in figura \ref{fig:gibbs}}.
+	\label{fig:gibbs_small}
 \end{figure}
 
 
@@ -147,4 +156,29 @@ Nelle Figure \ref{fig:dct_values_on_gibbs} e \ref{fig:last_dct_values_gibbs} son
 
 	\caption{Ultimi 50 x 50 coefficienti della DCT relativi alla Figura \ref{fig:dct_values_on_gibbs}}
 	\label{fig:last_dct_values_gibbs}
+\end{figure}
+\FloatBarrier
+
+\subsection{DCT sui blocchi a margine}
+Facendo qualche esperimento sulle immagini, specialmente quelle a quadrati bianchi e neri, abbiamo notato fondamentalmente due cose:
+\begin{enumerate}
+	\item Quando la dimensione dei blocchi è relativamente contenuta, la compressione risulta uniforme anche se i blocchi non sono della stessa dimensione di quellli interni;
+	\item Nel momento in cui la compressione ha una soglia di taglio bassa e la dimensione del blocco diventa immensa (ad esempio, quasi tutta l'immagine) il risultato della compressione è molto diverso tra la parte interna dell'immagine e quella sui margini. Tuttavia, queesta differenza sparisce nel momento in cui si alza leggermente la soglia di taglio dei valori.
+\end{enumerate}
+Le due osservazioni sono evidenziate dalle Figure \ref{fig:border_small} e \ref{fig:border_big}. Riteniamo che questo metodo di gestione dei margini funzioni meglio quando i rapporti tra la larghezza e l'altezza di una singolo blocco non sono esageratamente alti,  mentre, nel caso in cui questi lo siano, è necessario un valore di $d$ più alto per arginare il problema. Pensiamo che il motivo principale sia questo perché, osservando l'ultimo blocco in basso a destra nella Figura \ref{fig:border_big}, si può notare che ha una forma quadrata e la sua compressione sia risultata molto più uniforme al resto dell'immagine rispetto ai due lungo i lati.
+
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{figures/border_small}
+	\caption{Compressione dell'immagine "320x320" con $F=25$ e $d=6$}
+	\label{fig:border_small}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{figures/border_big}
+	
+	\caption{Compressione dell'immagine "320x320" con $F=300$ e $d=80$}
+	\label{fig:border_big}
 \end{figure}
