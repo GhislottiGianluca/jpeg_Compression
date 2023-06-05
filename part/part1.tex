@@ -15,7 +15,7 @@ L'implementazione effettiva risale al '97, nonostante ciò gode di particolare p
 
 \section{Implementazione custom}
 
-Il codice implementato per eseguire la DCT, secondo la definizione de coeffiicienti vista a lezione, è il seguente:
+Il codice implementato per eseguire la DCT, secondo la definizione de coefficienti vista a lezione, è il seguente:
 
 
 \begin{lstlisting}[gobble=1]
@@ -68,7 +68,7 @@ Il codice della DCT prende in input il puntatore alla matrice di output per fare
 
 Per evitare il calcolo del prodotto scalare delle basi con sè stesse, inoltre, abbiamo controllato direttamente l'indice della frequenza: se questo è 0, allora il prodotto scalare sarà N, altrimenti corrisponderà sempre a $\frac{N}{2}$.
 
-Inoltre, è presente un parametro \textit{jump}, che fa in modo che la DCT salti di un certo numero di celle di memoria per passare da una componente alla successiva: la sua utilità viene nel momento in cui viene chiamata la DCT sulle colonne: la matrice è organizzata in modalità row major, per cui, per eseguire la dct in place sulle colonne, è necessario dire alla DCT di saltare di M celle per passare alla componente successiva del vettore "logico", dove M rappresenta il numero di colonne della matrice.
+Inoltre, è presente un parametro \textit{jump}, che fa in modo che la DCT salti di un certo numero di celle di memoria per passare da una componente alla successiva: la sua utilità si concretizza nel momento in cui viene chiamata la DCT sulle colonne: la matrice è organizzata in modalità row major, per cui, per eseguire la dct in place sulle colonne, è necessario dire alla DCT di saltare di M celle per passare alla componente successiva del vettore "logico", dove M rappresenta il numero di colonne della matrice.
 
 \section{Test}
 
