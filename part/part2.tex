@@ -15,7 +15,7 @@ Il programma fornisce una schermata nella quale è possibile selezionare l'immag
 Il diagramma delle classi relativo a questo progetto è molto breve, infatti sono state create solamente 2 classi. La prima per gestire l'interfaccia grafica, chiamata \textit{MainWindow}, mentre la seconda, \textit{BlockManager}, si occupa della gestione dei blocchi e la loro relativa compressione. In questo caso, a differenza del primo progetto, vi è meno la necessità di creare  un'architettura con più classi in quanto la funzionalità è unica e precisa. Abbiamo, comunque, fatto in modo che la classe relativa alla finestra GUI sia separata dalla logica di compressione delle immagini al fine di cercare di mantenere una certa \textit{separation of concerns}. Questo diagramma viene mostrato in Figura \ref{fig:class_diagram}.
 
 \paragraph{Funzionamento della compressione e decompressione}
-Abbiamo cercato di progettare la compressione in modo da renderla più efficiente possibile. In particolare, quando un'immagine viene caricata, viene predisposta un'area di memoria che rappresenta blocchi dell'immagine contigui. Essendo, però, i blocchi dell'immagine su pixel che non sono in realtà contigui, abbiamo creato un mapping che permette di capire a quale pixel dell'immagine corrisponde un certo blocco e viceversa. Con questa soluzione, abbiamo incrementato significativamente la performance in fase di caricamento dell'immagine, poiché invece di tante allocazioni quanti sono i blocchi ne viene richiesta solo una. Il parallelismo, inoltre, non è molto utile quando si effettuano allocazioni di memoria in quanto l'heap ha bisogno di essere gestito contro la concorrenza. Vedremo che, invece, il parallelismo è tornato molto utile in fase di compressione e decompressione.
+Abbiamo cercato di progettare la compressione in modo da renderla più efficiente possibile. In particolare, quando un'immagine viene caricata, viene predisposta un'area di memoria che rappresenta blocchi dell'immagine contigui. Essendo, però, i blocchi dell'immagine su pixel che non sono in realtà contigui, abbiamo creato un mapping che permette di capire a quale pixel dell'immagine corrisponde un certo blocco e viceversa. Con questa soluzione, abbiamo incrementato significativamente la performance in fase di caricamento dell'immagine, poiché invece di tante allocazioni quanti sono i blocchi ne viene richiesta solo una. Il parallelismo, in caso di allocazioni multiple, non è moltoefficace in quanto l'heap ha bisogno di essere gestito contro la concorrenza. Vedremo che, invece, il parallelismo è tornato molto utile in fase di compressione e decompressione.
 
 \begin{figure}[h]
 	\centering
@@ -47,7 +47,7 @@ Nello specifico, il nostro programma di compressione considera i pixel in eccess
 \begin{equation}
 d' = \begin{cases}
 	0 &\text{se $d=0$}\\
-	\max \left\{  \ceil*{d  \sqrt{ \frac{W \cdot H}{F^{2}}}}, d - (F - \min \{W , H \}\})   \right \} &\text{altrimenti}
+	\max \left\{  \ceil*{d  \sqrt{ \frac{W \cdot H}{F^{2}}}}, d - \left(F - \min \left\{W , H \right\}\right)   \right \} &\text{altrimenti}
  \end{cases}
  \label{eq:d}
 \end{equation}
@@ -120,15 +120,19 @@ Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vi
 \end{figure}
 
 \section{Esperimenti sulle immagini}
+Questa Sezione contiene alcuni degli esperimenti, che riteniamo più interessanti, effettuati utilizzando il nostro software.
 
-Per fini dimostrativi, abbiamo provato ad eliminare lo scaling dalla DCT2 e a visualizzare l'output subito dopo il taglio dei blocchi In Figura \ref{fig:compression_values} è mostrato il risultato ottenuto. Si può notare come, effettivamente, il numero di pixel che si potrebbero scrivere su un file per poter visualizzare l'immagine compressa possono arrivare ad un livello significativamente più basso di quello necessario per rappresentare l'immagine non compressa, portando, quindi, ad un decremento significativo della dimensione del file in cui si potrebbe memorizzare un formato simile a questo.
+\subsection{Visualizzazione dei tagli}
+Per fini dimostrativi, abbiamo provato a visualizzare l'output subito dopo il taglio dei blocchi sui quali è stata effettuata una DCT2. In Figura \ref{fig:compression_values} è mostrato il risultato ottenuto. È importante notare che, essendo una DCT, i toni di grigio dei pixel non dicono molto rispetto alla composizione delle frequenze; si possono notare, tuttavia come, effettivamente, siano presenti dei triangoli pieni di valori nulli, ed è proprio qui il vantaggio di comprimere un'immagine in questo modo. In base alla soglia di taglio scelta, il numero di pixel che si potrebbero scrivere su un file per poter visualizzare l'immagine compressa possono arrivare ad un livello significativamente più basso di quello necessario per rappresentare l'immagine non compressa, portando, quindi, ad un decremento significativo della dimensione del file in cui si potrebbe memorizzare un formato simile a questo.
 
-\begin{figure}[h]
+\begin{figure}%
 	\centering
-	\includegraphics[width=1\linewidth]{figures/qt_dct_values}
-	\caption{Valori della DCT generati dalla compressione (a meno dello scaling). Si noti il taglio netto delle frequenze determinato dalla soglia $d$.}
+	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/deer_dct_full.png} }}%
+	\subfloat[][Tagli della DCT basati sul valore di $d$]{{\includegraphics[width=0.49\textwidth]{figures/deer_dct.png} }}%
+	\caption{Compressione dell'immagine \textit{deer} per $F=50$ e $d=50$. Si notino i triangoli neri che completano ognuno dei blocchi mostrati.}%
 	\label{fig:compression_values}
 \end{figure}
+
 
 \subsection{Fenomeno di Gibbs}
 
@@ -142,7 +146,7 @@ In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenu
 	\centering
 	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/deer_gibbs_full.png} }}%
 	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/deer_gibbs_comp.png} }}%
-	\caption{Compressione dell'immagine "Deer" per $F=200$ e $d=70$. Si può distinguere chiaramento il limite del blocco centrale, che delimita il fenomeno di Gibbs.}%
+	\caption{Compressione dell'immagine \textit{deer} con $F=200$ e $d=70$. Si può distinguere chiaramento il limite del blocco centrale, che delimita il fenomeno di Gibbs.}%
 	\label{fig:gibbs}
 \end{figure}
 
@@ -150,7 +154,7 @@ In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenu
 	\centering
 	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/deer_gibbs_full.png} }}%
 	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/deer_notgibbs_comp.png} }}%
-	\caption{Compressione dell'immagine "Deer" per $F=8$ e $d=3$. Il risultato di questa compressione evidenzia come, con blocchi piccoli, sia possibile limitare il fenomeno di Gibbs ad aree molto piccole.}%
+	\caption{Compressione dell'immagine \textit{deer} con $F=8$ e $d=3$. Il risultato di questa compressione evidenzia come, con blocchi piccoli, sia possibile limitare il fenomeno di Gibbs ad aree molto piccole.}%
 	\label{fig:gibbs_small}
 \end{figure}
 
@@ -170,28 +174,36 @@ In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenu
 \end{figure}
 \FloatBarrier
 
+\subsection{Caso del gradiente}
 \begin{figure}%
 	\centering
 	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/gradient_full.png} }}%
 	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/gradient_comp.png} }}%
-	\caption{Compressione dell'immagine "Gradient" per $F=100$ e $d=1$}%
+	\caption{Compressione dell'immagine \textit{gradient} con $F=100$ e $d=1$}%
 	\label{fig:gradient}
 \end{figure}
 
+In Figura \ref{fig:gradient} è mostrato l'output della compressione dell'immagine \textit{gradient}. Questo risultato è particolare rispetto agli altri, poiché non si distinguono i blocchi ma si possono vedere distintamente le colonne della DCT. Osservando la costruzione dell'immagine di input, abbiamo un'idea del motivo per cui si è manifestato questo fenomeno: per ogni colonna di pixel, il tono di grigio è costante. Questo vuol dire che, in realtà, la DCT in quella direzione e non ha bisogno di frequenze diverse dalla prima per rappresentare i vettori colonna in modo accurato.
+
+
+
 \subsection{DCT sui blocchi a margine}
+Abbiamo anche testato il comportamento dell'algoritmo di aggiustamento di $d$ all'Equzione \ref{eq:d} in una situazione "normale" e in un caso estemo
 Facendo qualche esperimento sulle immagini, specialmente quelle a quadrati bianchi e neri, abbiamo notato fondamentalmente due cose:
 \begin{enumerate}
 	\item Quando la dimensione dei blocchi è relativamente contenuta, la compressione risulta uniforme anche se i blocchi non sono della stessa dimensione di quelli interni;
 	\item Nel momento in cui la compressione ha una soglia di taglio bassa e la dimensione del blocco diventa immensa (ad esempio, quasi tutta l'immagine) il risultato della compressione è molto diverso tra la parte interna dell'immagine e quella sui margini. Tuttavia, queesta differenza sparisce nel momento in cui si alza leggermente la soglia di taglio dei valori.
 \end{enumerate}
-Le due osservazioni sono evidenziate dalle Figure \ref{fig:border_small} e \ref{fig:border_big}. Riteniamo che questo metodo di gestione dei margini funzioni meglio quando i rapporti tra la larghezza e l'altezza di una singolo blocco non sono esageratamente alti,  mentre, nel caso in cui questi lo siano, è necessario un valore di $d$ più alto per arginare il problema. Pensiamo che il motivo principale sia questo perché, osservando l'ultimo blocco in basso a destra nella Figura \ref{fig:border_big}, si può notare che ha una forma quadrata e la sua compressione sia risultata molto più uniforme al resto dell'immagine rispetto ai due lungo i lati.
+Le due osservazioni sono evidenziate dalle Figure \ref{fig:border_small} e \ref{fig:border_big}. Riteniamo che questo metodo di gestione dei margini funzioni meglio quando i rapporti tra la larghezza e l'altezza di una singolo blocco non sono esageratamente alti,  mentre, nel caso in cui questi lo siano, è necessario un valore di $d$ più alto per arginare il problema. 
+
+Inoltre, osservando l'ultimo blocco in basso a destra, nella Figura \ref{fig:border_big}, si può notare che questo è risultato molto più definito degli altri due. Questo è dovuto alla differenza molto ampia di frequenza da riempire tra questi, rendendo più facile una rappresentazione fedele di esso.
 
 
 \begin{figure}%
 	\centering
 	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/320.png} }}%
 	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/320_small.png} }}%
-	\caption{Compressione dell'immagine "$320 \times 320$" con $F=25$ e $d=6$}%
+	\caption{Compressione dell'immagine $\mathit{320 \times 320}$ con $F=25$ e $d=6$}%
 	\label{fig:border_small}
 \end{figure}
 
@@ -199,6 +211,6 @@ Le due osservazioni sono evidenziate dalle Figure \ref{fig:border_small} e \ref{
 	\centering
 \subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/320.png} }}%
 \subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/320_large.png} }}%
-	\caption{Compressione dell'immagine "$320 \times 320$" con $F=300$ e $d=80$.}%
+	\caption{Compressione dell'immagine $\mathit{320 \times 320}$ con $F=300$ e $d=80$.}%
 	\label{fig:border_big}
 \end{figure}
