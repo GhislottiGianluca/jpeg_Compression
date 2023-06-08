@@ -44,10 +44,16 @@ All'interno di questo progetto, abbiamo deciso in modo "sperimentale" di gestire
 
 Nello specifico, il nostro programma di compressione considera i pixel in eccesso derivati dalla suddivisione in blocchi e li utilizza per creare dei blocchi più piccoli, al fine di riempire l'intera immagine. Dopo questa operazione, ne esegue la DCT2 allo stesso modo degli altri blocchi. Prima di eseguire il taglio, però, la soglia di azzeramento delle frequenze viene adattata in modo da essere proporzionato alla minore quantità di frequenze e da rendere, quindi, la compressione dell'immagine più uniforme:
 
-$$d' = \floor*{d  \sqrt{ \frac{W \cdot H}{F^{2}}}}$$
+\begin{equation}
+d' = \begin{cases}
+	0 &\text{se $d=0$}\\
+	\max \left\{  \ceil*{d  \sqrt{ \frac{W \cdot H}{F^{2}}}}, d - (F - \min \{W , H \}\})   \right \} &\text{altrimenti}
+ \end{cases}
+ \label{eq:d}
+\end{equation}
 
 dove W e H rappresentano rispettivamente la larghezza e l'altezza del blocco preso in considerazione.
-Inoltre, nel caso in cui $d'=0$, ma $d>0$, si mantiene il valore 1 al fine di evitare buchi indesiderati.
+La prima espressione del massimo è utile perché, quando il valore della soglia di taglio è piccola, i blocchi sui bordi  non seguirebbero un andamento iniziale della qualità simile a quello dei blocchi centrali, per via della dimensione ridotta che causa un minor numero di frequenze da analizzare. L'espressione successiva fa in modo che, quando $d$ aumenta, venga fatto combaciare il vertice in basso a destra del blocco piccolo con quello degli altri blocchi.
 
 Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vincolati dalla matrice di quantizzazione e abbiamo potuto, quindi, sperimentare una gestione leggermente diversa del margine dell'immagine.
 
@@ -97,7 +103,7 @@ Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vi
 				
 				\foreach \x in {0,...,2}{
 					\foreach \y in {0,...,3} {
-						\ifnumcomp{\x + (3 - \y)}{<}{5}{
+						\ifnumcomp{\x + (3 - \y)}{<}{4}{
 							\node[box, fill=green] at (\x,\y){};
 						}{};
 					}
@@ -110,12 +116,12 @@ Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vi
 		(b)
 	\end{center}
 \end{minipage}
-\caption{Taglio delle frequenze sulle diverse dimensioni dei blocchi}\label{fig:taglio}
+\caption{Taglio delle frequenze sulle diverse dimensioni dei blocchi per valori di $F=4$ e $d=5$ In questo specifico esempio, la trasformazione della soglia porterebbe $d$ a decrementare di 1.}\label{fig:taglio}
 \end{figure}
 
-\section{Visualizzazione dei risultati}
+\section{Esperimenti sulle immagini}
 
-Per mostrare meglio la compressione potremmo momentaneamente ignorare la conversione dei valori tramite la IDCT2. In figura\ref{fig:compression_values} viene mostrato il risultato ottenuto, dove è possibile osservare i coefficienti generati dalla DCT, i quali vengono successivamente tagliati per il valore di input scelto. In questo modo, ogni blocco conterrà dati diversi da 0 solo nella parte superiore del taglio, evidenziata anche graficamente dalla distribuzione del colore bianco nei singoli blocchi. Infatti tale tonalità rappresenta un valore elevato del coefficiente presente nella matrice, mentre le zone nere, rappresentano i valori che sono stati impostati a 0 dal taglio. Al fine di rendere migliore la visualizzazione, è stato temporaneamente modificato lo scaling delle DCT.
+Per fini dimostrativi, abbiamo provato ad eliminare lo scaling dalla DCT2 e a visualizzare l'output subito dopo il taglio dei blocchi In Figura \ref{fig:compression_values} è mostrato il risultato ottenuto. Si può notare come, effettivamente, il numero di pixel che si potrebbero scrivere su un file per poter visualizzare l'immagine compressa possono arrivare ad un livello significativamente più basso di quello necessario per rappresentare l'immagine non compressa, portando, quindi, ad un decremento significativo della dimensione del file in cui si potrebbe memorizzare un formato simile a questo.
 
 \begin{figure}[h]
 	\centering
@@ -132,20 +138,21 @@ Nelle Figure \ref{fig:dct_values_on_gibbs} e \ref{fig:last_dct_values_gibbs} son
 
 In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenuta dei blocchi (in questo caso, $8 \times 8$), sia sufficiente al fine di limitare il fenomeno a piccolissime aree dell'immagine, rendendolo quasi impercettibile.
 
-\begin{figure}[h]
+\begin{figure}%
 	\centering
-	\includegraphics[width=1\linewidth]{figures/gibbs_phenomenon}
-	\caption{Fenomeno di Gibbs su un blocco}
+	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/deer_gibbs_full.png} }}%
+	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/deer_gibbs_comp.png} }}%
+	\caption{Compressione dell'immagine "Deer" per $F=200$ e $d=70$. Si può distinguere chiaramento il limite del blocco centrale, che delimita il fenomeno di Gibbs.}%
 	\label{fig:gibbs}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}%
 	\centering
-	\includegraphics[width=1\linewidth]{figures/gibbs_small}
-	\caption{Mitigazione del fenomeno di Gibbs sull'area dell'immagine mostrata in figura \ref{fig:gibbs}}.
+	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/deer_gibbs_full.png} }}%
+	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/deer_notgibbs_comp.png} }}%
+	\caption{Compressione dell'immagine "Deer" per $F=8$ e $d=3$. Il risultato di questa compressione evidenzia come, con blocchi piccoli, sia possibile limitare il fenomeno di Gibbs ad aree molto piccole.}%
 	\label{fig:gibbs_small}
 \end{figure}
-
 
 \begin{figure}
 	\centering
@@ -163,6 +170,14 @@ In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenu
 \end{figure}
 \FloatBarrier
 
+\begin{figure}%
+	\centering
+	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/gradient_full.png} }}%
+	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/gradient_comp.png} }}%
+	\caption{Compressione dell'immagine "Gradient" per $F=100$ e $d=1$}%
+	\label{fig:gradient}
+\end{figure}
+
 \subsection{DCT sui blocchi a margine}
 Facendo qualche esperimento sulle immagini, specialmente quelle a quadrati bianchi e neri, abbiamo notato fondamentalmente due cose:
 \begin{enumerate}
@@ -172,17 +187,18 @@ Facendo qualche esperimento sulle immagini, specialmente quelle a quadrati bianc
 Le due osservazioni sono evidenziate dalle Figure \ref{fig:border_small} e \ref{fig:border_big}. Riteniamo che questo metodo di gestione dei margini funzioni meglio quando i rapporti tra la larghezza e l'altezza di una singolo blocco non sono esageratamente alti,  mentre, nel caso in cui questi lo siano, è necessario un valore di $d$ più alto per arginare il problema. Pensiamo che il motivo principale sia questo perché, osservando l'ultimo blocco in basso a destra nella Figura \ref{fig:border_big}, si può notare che ha una forma quadrata e la sua compressione sia risultata molto più uniforme al resto dell'immagine rispetto ai due lungo i lati.
 
 
-\begin{figure}
+\begin{figure}%
 	\centering
-	\includegraphics[width=0.7\linewidth]{figures/border_small}
-	\caption{Compressione dell'immagine "320x320" con $F=25$ e $d=6$}
+	\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/320.png} }}%
+	\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/320_small.png} }}%
+	\caption{Compressione dell'immagine "$320 \times 320$" con $F=25$ e $d=6$}%
 	\label{fig:border_small}
 \end{figure}
 
-\begin{figure}
+\begin{figure}%
 	\centering
-	\includegraphics[width=0.7\linewidth]{figures/border_big}
-	
-	\caption{Compressione dell'immagine "320x320" con $F=300$ e $d=80$}
+\subfloat[][Immagine originale]{{\includegraphics[width=0.49\textwidth]{figures/320.png} }}%
+\subfloat[][Immagine compressa]{{\includegraphics[width=0.49\textwidth]{figures/320_large.png} }}%
+	\caption{Compressione dell'immagine "$320 \times 320$" con $F=300$ e $d=80$.}%
 	\label{fig:border_big}
 \end{figure}
