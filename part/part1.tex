@@ -13,10 +13,10 @@ L'implementazione effettiva risale al '97, nonostante ciò gode di particolare p
 
 \section{Implementazione custom}
 
-Il codice implementato per eseguire la DCT, secondo la definizione de coefficienti vista a lezione, è il seguente:
+Il codice implementato per eseguire la DCT e la DCT2, secondo la definizione vista a lezione, è quello mostrato nei Listati \ref{lstdct} e \ref{lstdct2}.
 
 
-\begin{lstlisting}[gobble=1]
+\begin{lstlisting}[gobble=1, float, label=lstdct, caption={Codice per la DCT}]
 	void dct(int N, double *in, double *out, int jump = 1) {
 		
 		double *f = new double[N];
@@ -42,9 +42,7 @@ Il codice implementato per eseguire la DCT, secondo la definizione de coefficien
 
 \end{lstlisting}
 
-Siccome l'applicazione di 2 DCT genera la DCT2, di seguito si trova la sua implementazione:
-
-\begin{lstlisting}[gobble=1]
+\begin{lstlisting}[gobble=1, float, label=lstdct2, caption={Codice per la DCT2}]
 	void dct2(int N, int M, double *in, double *out) {
 		for (int i = 0; i < N * M; ++i) {
 			out[i] = 0;
@@ -62,11 +60,11 @@ Siccome l'applicazione di 2 DCT genera la DCT2, di seguito si trova la sua imple
 	}
 \end{lstlisting}
 
-Il codice della DCT prende in input il puntatore alla matrice di output per fare in modo che la DCT2 possa eseguire due DCT in place, ovvero scrivendo due volte sulla stessa matrice evitando ulteriori allocazioni di memoria.
-
+Il codice della DCT prende in input il puntatore alla matrice di output per fare in modo che la DCT2 possa eseguire due DCT in place, ovvero scrivendo due volte sulla stessa matrice, evitando così ulteriori allocazioni di memoria.
 Per evitare il calcolo del prodotto scalare delle basi con sè stesse, inoltre, abbiamo controllato direttamente l'indice della frequenza: se questo è 0, allora il prodotto scalare sarà N, altrimenti corrisponderà sempre a $\frac{N}{2}$.
 
-Nell'applicazione della DCT2, le matrici sono state organizzate in modalità row major. Ciò ha però richiesto una modifica nell'accesso della "matrice logica", infatti se scorrere le righe basterà muoversi di un passo nel vettore, per scorrere sulle colonne sarà invece necessario eseguire un salto pari alla lunghezza di una riga. Per questo motivo all'interno del metodo relativo alla DCT è stato aggiunto il parametro \textit{jump}, che permette appunto di applicare la DCT sia sulle righe che sulle colonne, impostando rispettivamente il valore a uno, oppure ad M, con M pari al numero di colonne totali.
+La DCT2 è semplicemente una sequenza di due ciclo di chiamate alla DCT, uno per le righe e uno per le colonne.
+Nell'applicazione della DCT2, le matrici sono state organizzate in modalità row major. Ciò ha, però, richiesto un piccolo adattamento: nell'accesso della "matrice logica", infatti se scorrere le righe basterà muoversi di un passo nel vettore, per scorrere sulle colonne sarà invece necessario eseguire un salto pari alla lunghezza di una riga. Per questo motivo all'interno del metodo relativo alla DCT è stato aggiunto il parametro \textit{jump}, che permette, appunto, di applicare la DCT sia sulle righe che sulle colonne, impostando rispettivamente il valore a uno oppure ad $M$, con $M$ pari al numero di colonne totali. Questa modifica non influisce sull'universalità della DCT ad una dimensione in quanto, passando alla DCT un semplice vettore, senza specificare il salto, l'algoritmo funzionerebbe esattamente come se questo parametro non fosse presente.
 
 \section{Test}
 
