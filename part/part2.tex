@@ -83,15 +83,15 @@ Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vi
 				box/.style={rectangle,draw=black,thick, minimum size=1cm},
 				]%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 				
-				\foreach \x in {0,1,...,3}{
-					\foreach \y in {0,1,...,3}
+				\foreach \x in {0,1,...,4}{
+					\foreach \y in {0,1,...,4}
 					\node[box, fill=red] at (\x,\y){};
 				}
 			
 			
-				\foreach \x in {0,...,3}{
-					\foreach \y in {0,...,3} {
-						\ifnumcomp{\x + (3 - \y)}{<}{5}{
+				\foreach \x in {0,...,4}{
+					\foreach \y in {0,...,4} {
+						\ifnumcomp{\x + (4 - \y)}{<}{4}{
 							\node[box, fill=green] at (\x,\y){};
 						}{};
 					}
@@ -111,15 +111,15 @@ Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vi
 				box/.style={rectangle,draw=black,thick, minimum size=1cm},
 				]%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 				
-				\foreach \x in {0,1,...,2}{
-					\foreach \y in {0,1,...,3}
+				\foreach \x in {0,1,...,1}{
+					\foreach \y in {0,1,...,4}
 					\node[box, fill=red] at (\x,\y){};
 				}
 				
 				
-				\foreach \x in {0,...,2}{
-					\foreach \y in {0,...,3} {
-						\ifnumcomp{\x + (3 - \y)}{<}{4}{
+				\foreach \x in {0,...,1}{
+					\foreach \y in {0,...,4} {
+						\ifnumcomp{\x + (4 - \y)}{<}{3}{
 							\node[box, fill=green] at (\x,\y){};
 						}{};
 					}
@@ -132,7 +132,7 @@ Abbiamo preso questa decisione perché, a differenza di jpeg, non siamo stati vi
 		(b)
 	\end{center}
 \end{minipage}
-\caption{Taglio delle frequenze sulle diverse dimensioni dei blocchi per valori di $F=4$ e $d=5$ In questo specifico esempio, la trasformazione della soglia porterebbe $d$ a decrementare di 1.}\label{fig:taglio}
+\caption{Taglio delle frequenze sulle diverse dimensioni dei blocchi per valori di $F=5$ e $d=4$ In questo specifico esempio, la trasformazione della soglia porterebbe $d$ a decrementare di 1.}\label{fig:taglio}
 \end{figure}
 
 \section{Esperimenti sulle immagini}
