@@ -3,7 +3,9 @@
 Abbiamo deciso di realizzare il software per la seconda parte del progetto utilizzando il framework Qt\cite{qt}, che permette di progettare interfacce grafiche scrivendo codice in linguaggio C++. Il nostro programma permette, fondamentalmente, di visualizzare, in tempo reale, il risultato di una compressione definiti il livello di taglio dei blocchi e la dimensione di quest'ultimi. Non è presente una funzionalità di salvataggio dell'immagine perché il nostro non è uno standard riconosciuto e sarebbe, per cui, inutilizzabile in altri programmi.
 Idealmente, però, basterebbe progettare la struttura del file in modo da contenere le sequenze dei valori non nulli dei blocchi associata ad altre informazioni generali, come la dimensione reale dell'immagine, la grandezza dei blocchi o la soglia di taglio, per poter scrivere un visualizzatore di immagini che sia in grado di effettuare il parsing di quel file ed eseguire la IDCT2.
 
-Il programma fornisce una schermata nella quale è possibile selezionare l'immagine da comprimere e i valori di compressione da applicare, ossia dimensione dei blocchi e la soglia di taglio delle frequenze. Nella parte sinistra della GUI viene mostrata l'immagine originale, mentre in quella di destra la sua versione compressa. In figura \ref{fig:deer} è riportato un esempio sull'immagine \textit{deer}, sulla quale sono stati applicati blocchi di elevate dimensioni (20x20) ed una elevata compressione (circa del 92\%), in questo modo è facilmente osservabile l'effetto della compressione sui blocchi e sull'immagine.
+Lavorando con la FFTW, abbiamo analizzato la sua scalatura. Infatti computando una DCT2 e una IDCT2 su una matrice di partenza e applicando la scalatura fornita dalla libreria usata, siamo riusciti a riottenere i valori originali della matrice iniziale. In particolare testando la differenza di tali valori si osserva un errore di approssimazione durante le operazioni non superiore ad 1e$^{-14}$. Consideriamo però tale errore accettabile, osservando che la differenza tra 2 double successivi è pari a 2.22045e$^{-16}$.
+
+Il programma fornisce una schermata nella quale è possibile selezionare l'immagine da comprimere e i valori di compressione da applicare, ossia dimensione dei blocchi e la soglia di taglio delle frequenze. Nella parte sinistra della GUI viene mostrata l'immagine originale, mentre in quella di destra la sua versione compressa. In Figura \ref{fig:deer} è riportato un esempio sull'immagine \textit{deer}, sulla quale sono stati applicati blocchi di elevate dimensioni (20x20) ed una elevata compressione (circa del 92\%), in questo modo è facilmente osservabile l'effetto della compressione sui blocchi e sull'immagine.
 
 \begin{figure}[h]
 	\centering
@@ -152,7 +154,7 @@ Per fini dimostrativi, abbiamo provato a visualizzare l'output subito dopo il ta
 
 Scegliendo un'elevata dimensione dei blocchi si rende particolarmente visibile il fenomeno di Gibbs, mostrato in Figura \ref{fig:gibbs}. La sua presenza tende ad essere più fastidiosa con blocchi grandi perché è più probabile che, all'aumentare di $F$, aumenta lo spazio all'interno del quale le basse frequenze cercano di compensare la carenza di quelle alte per rappresentare i cambiamenti repentini del tono di grigio presenti nel blocco stesso.
 
-Nelle Figure \ref{fig:dct_values_on_gibbs} e \ref{fig:last_dct_values_gibbs} sono rappresentati rispettivamente l'intero istogramma del blocco mostrato in Figura \ref{fig:gibbs} e un suo zoom sulle ultime $50 \times 50$ frequenze. Nonostante la presenza di basse frequenze sia decisamente maggiore di quella delle alte frequenze, sono proprio quest'ultime che sono in grado di rappresentare al meglio i dettagli e, quindi, anche il bordo superiore della testa del cervo. Al momento del taglio, con un valore di $d$ basso, queste spariscono del tutto e non è, quindi, più possibile mostrare il cambiamento netto dell'immagine originale.
+Nelle Figure \ref{fig:dct_values_on_gibbs} e \ref{fig:last_dct_values_gibbs} sono rappresentati rispettivamente l'intero istogramma del blocco mostrato in Figura \ref{fig:gibbs} e un suo zoom sulle ultime frequenze. Nonostante la presenza di basse frequenze sia decisamente maggiore di quella delle alte frequenze, sono proprio quest'ultime che sono in grado di rappresentare al meglio i dettagli e, quindi, anche il bordo superiore della testa del cervo. Al momento del taglio, con un valore di $d$ basso, queste spariscono del tutto e non è, quindi, più possibile mostrare il cambiamento netto dell'immagine originale.
 
 In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenuta dei blocchi (in questo caso, $8 \times 8$), sia sufficiente al fine di limitare il fenomeno a piccolissime aree dell'immagine, rendendolo quasi impercettibile.
 
@@ -183,7 +185,7 @@ In contrasto, la Figura \ref{fig:gibbs_small} mostra come, la dimensione contenu
 	\centering
 	\includegraphics[width=1\linewidth]{figures/last_dct_values.eps}
 
-	\caption{Ultimi 50 x 50 coefficienti della DCT relativi alla Figura \ref{fig:dct_values_on_gibbs}}
+	\caption{Ultimi coefficienti della DCT relativi alla Figura \ref{fig:dct_values_on_gibbs}}
 	\label{fig:last_dct_values_gibbs}
 \end{figure}
 \FloatBarrier
