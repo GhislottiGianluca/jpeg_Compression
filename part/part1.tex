@@ -1,7 +1,7 @@
 	
 \part{Implementazione della DCT2}
 
-Lo scopo di questa parte del progetto è stato quello di implementare la nostra versione della DCT2 e confrontare i tempi di esecuzione con quelli di una libreria che implementa la versione fast della DCT2. La libreria utilizzata è la FFTW \cite{fftw}, scritta in C.
+Lo scopo di questa parte del progetto è stato quello di implementare la nostra versione della DCT2 e confrontare i tempi di esecuzione con quelli di una libreria che implementa la versione fast della DCT2. La libreria utilizzata è la FFTW \cite{fftw}.
 
 Per testare la scalatura eseguita da FFTW, applichiamo una dct e una idct su una matrice di partenza per poi testare se tali valori corrispondono tra loro. Dalla differenza dei risultati ottenuti, abbiamo osservato che viene introdotto un errore durante le operazioni non superiore ad 1e$^{-14}$. Consideriamo tale errore di approssimazione accettabile, osservando che la differenza tra 2 double successivi è pari a 2.22045e$^{-16}$.
 
@@ -9,7 +9,7 @@ L'implementazione "fatta in casa" della DCT2 e dell'analoga IDCT2 è stata imple
 
 \section{Informazioni sulla libreria}
 
-La libreria scelta, come accennato precedentemente, è la FFTw, il cui nome è l'abbreviativo di \textit{Fast Fourier Transform in the West}. Infatti si dichiara essere una delle implementazioni più veloci della Fastest Fourier Transform. Tali risultati sono stati raggiunti grazie ad un ottimizzazione particolare degli algoritmi, che sfruttano alcune istruzioni specifiche dei vari processori ottimizzate per la risoluzione numerica.
+La libreria scelta, come accennato precedentemente, è la FFTW, il cui nome è l'abbreviativo di \textit{Fast Fourier Transform in the West}. Infatti si dichiara essere una delle implementazioni più veloci della Fastest Fourier Transform. Tali risultati sono stati possibili grazie ad un ottimizzazione particolare degli algoritmi, che sfruttano alcune istruzioni specifiche dei vari processori ottimizzate per la risoluzione numerica.
 
 L'implementazione effettiva risale al '97, nonostante ciò gode di particolare popolarità su Github\cite{Github} e ha vinto numerosi premi, tra cui il \textit{1999 J.H Wilkinson Prize for Numerical Software}, il quale viene conferito, una volta sola ogni 4 anni, al software che "best addresses all phases of the preparation of high quality numerical software", ovvero al programma che meglio copre tutte le fasi di un software numerico. Inoltre il paper correlato alla libreria "A Fast Fourier Transform Compiler"\cite{fftw_paper} ha ricevuto il premio di "Most Influential PLDI Paper" nel 2009, con un totale di circa 2000 download e 400 citazioni.
 
@@ -44,7 +44,7 @@ Il codice implementato per eseguire la DCT, secondo la definizione de coefficien
 
 \end{lstlisting}
 
-Siccome l'applicazione di 2 dct genera la DCT2, di seguito si trova la sua implementazione:
+Siccome l'applicazione di 2 DCT genera la DCT2, di seguito si trova la sua implementazione:
 
 \begin{lstlisting}[gobble=1]
 	void dct2(int N, int M, double *in, double *out) {
@@ -68,7 +68,7 @@ Il codice della DCT prende in input il puntatore alla matrice di output per fare
 
 Per evitare il calcolo del prodotto scalare delle basi con sè stesse, inoltre, abbiamo controllato direttamente l'indice della frequenza: se questo è 0, allora il prodotto scalare sarà N, altrimenti corrisponderà sempre a $\frac{N}{2}$.
 
-Inoltre, è presente un parametro \textit{jump}, che fa in modo che la DCT salti di un certo numero di celle di memoria per passare da una componente alla successiva: la sua utilità si concretizza nel momento in cui viene chiamata la DCT sulle colonne: la matrice è organizzata in modalità row major, per cui, per eseguire la dct in place sulle colonne, è necessario dire alla DCT di saltare di M celle per passare alla componente successiva del vettore "logico", dove M rappresenta il numero di colonne della matrice.
+Nell'applicazione della DCT2, le matrici sono state organizzate in modalità row major. Ciò ha però richiesto una modifica nell'accesso della "matrice logica", infatti se scorrere le righe basterà muoversi di un passo nel vettore, per scorrere sulle colonne sarà invece necessario eseguire un salto pari alla lunghezza di una riga. Per questo motivo all'interno del metodo relativo alla DCT è stato aggiunto il parametro \textit{jump}, che permette appunto di applicare la DCT sia sulle righe che sulle colonne, impostando rispettivamente il valore a uno, oppure ad M, con M pari al numero di colonne totali.
 
 \section{Test}
 
@@ -76,7 +76,7 @@ All'interno del codice sono stati aggiunti una serie di test (tramite l'uso dell
 
 In Figura \ref{fig:timings} si può osservare come l'implementazione "fatta in casa" (in figura denominata \textit{Slow}) segua un incremento effettivamente molto più ripido di quello della libreria che implementa la versione Fast. In particolare, le due funzioni chiamate "Fit" sono curve della forma $ax^3$ per la versione lenta e $bx^2 \log{x}$  per quella della libreria, con $a$ e $b$ parametri del fitting. La vicinanza tra le funzioni e gli andamenti reali dei tempi ci suggerisce che, effettivamente,vengono rispettati gli andamenti asintotici dati dalla teoria dei due algoritmi.
  
- Un fenomeno particolare che si osserva è che mentre la matrice è ancora di dimensioni molto ristrette la dct implementata fatta da noi supera quella fast. Una possibile ragione è che la FFTW utilizza delle tecniche numeriche sulla trasformata per ridurre il numero di operazioni necessarie, il che porta ad una maggiore efficienza per matrici di elevate dimensioni. Analogamente, nelle matrici di piccole dimensioni, è ragionevole pensare che l'applicazione di queste tecniche introducano un overhead che porta ad avere una performance peggiore rispetto alla DCT2 standard.
+ Un fenomeno particolare che si osserva è che mentre la matrice è ancora di dimensioni molto ristrette, la DCT implementata fatta da noi supera quella fast. Una possibile ragione è che la FFTW utilizza delle tecniche numeriche sulla trasformata per ridurre il numero di operazioni necessarie, il che porta ad una maggiore efficienza per matrici di elevate dimensioni. Analogamente, è ragionevole pensare che l'applicazione di queste tecniche introducano un overhead che, su matrici ristrette, porta ad avere performance peggiori rispetto alla DCT2 standard.
 
 FFTW non esegue lo stesso algoritmo ad ogni chiamata della DCT: questo è il motivo per cui il grafico della versione fast non è liscio come quello della versione "fatta in casa", che esegue sempre lo stesso tipo di istruzioni indipendentemente dalla matrice/vettore in input.
 È importante puntualizzare inoltre che, anche se questo non influisce sui tempi, i risultati delle DCT e DCT2 sono diversi tra la versione fast e la nostra: infatti, la libreria presa in considerazione utilizza un tipo di scaling della matrice dei coefficienti diverso da quello visto a lezione.
